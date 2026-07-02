@@ -1,0 +1,59 @@
+# Adiaphora API — example requests (IntelliJ HTTP client / VS Code REST Client format).
+# Run top-to-bottom: register, login (captures the access token), then the authenticated calls.
+
+@host = http://localhost:8080
+@email = demo-{{$uuid}}@example.test
+@password = Password123!
+
+### Register a new user
+POST {{host}}/api/v1/auth/register
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### Login (stores the access token in a variable)
+# @name login
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+> {% client.global.set("accessToken", response.body.accessToken);
+     client.global.set("refreshToken", response.body.refreshToken); %}
+
+### Current user profile
+GET {{host}}/api/v1/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Create a bankruptcy case
+# @name createApp
+POST {{host}}/api/v1/applications
+Authorization: Bearer {{accessToken}}
+
+> {% client.global.set("applicationId", response.body.applicationId); %}
+
+### List my cases
+GET {{host}}/api/v1/applications
+Authorization: Bearer {{accessToken}}
+
+### Get one case
+GET {{host}}/api/v1/applications/{{applicationId}}
+Authorization: Bearer {{accessToken}}
+
+### Submit the case for evaluation
+POST {{host}}/api/v1/applications/{{applicationId}}/submit
+Authorization: Bearer {{accessToken}}
+
+### Status history
+GET {{host}}/api/v1/applications/{{applicationId}}/status-history
+Authorization: Bearer {{accessToken}}
+
+### Refresh tokens
+POST {{host}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{refreshToken}}" }
+
+### Logout (revokes refresh tokens)
+POST {{host}}/api/v1/auth/logout
+Authorization: Bearer {{accessToken}}

@@ -40,12 +40,15 @@ class LayeredArchitectureTest {
 
     @Test
     void domainMustNotDependOnWebOrPersistenceFrameworks() {
+        // Neutral pagination value types (org.springframework.data.domain: Page/Pageable/Sort) are
+        // allowed in domain repository interfaces; JPA and web frameworks are not.
         ArchRule rule = noClasses()
                 .that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "org.springframework.web..",
                         "jakarta.persistence..",
-                        "org.springframework.data..")
+                        "org.springframework.data.jpa..",
+                        "org.springframework.stereotype..")
                 .allowEmptyShould(true);
         rule.check(classes);
     }

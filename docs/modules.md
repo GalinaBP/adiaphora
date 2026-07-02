@@ -2,8 +2,8 @@
 
 | Module          | Responsibility                                                                 | Status   |
 |-----------------|--------------------------------------------------------------------------------|----------|
-| `auth`          | Registration, login, password hashing, access/refresh tokens, roles, `/me`.    | Phase 2  |
-| `application`   | Bankruptcy case lifecycle, ownership, route, submission, status history.       | Phase 2  |
+| `auth`          | Registration, login, password hashing, access/refresh tokens, roles, `/me`.    | Phase 2 ✅ |
+| `application`   | Bankruptcy case lifecycle, ownership, route, submission, status history.       | Phase 2 ✅ |
 | `questionnaire` | Versioned questionnaire, sections, questions, incremental answers, snapshot.   | Phase 3  |
 | `rules`         | Deterministic rule engine, triggered rules, missing info, preliminary route.   | Phase 3  |
 | `review`        | Manual-review tasks, assignment, decisions, documented route overrides.        | Phase 3  |
