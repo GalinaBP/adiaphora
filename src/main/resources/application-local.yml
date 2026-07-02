@@ -3,6 +3,10 @@ spring:
     url: ${DB_URL:jdbc:mysql://localhost:3306/adiaphora?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:adiaphora}
     password: ${DB_PASSWORD:adiaphora}
+  # Audit is numbered V009 (per spec) but is being built before reviews/documents (V007/V008).
+  # Allow out-of-order locally so an existing dev DB accepts them when they land. Prod stays strict.
+  flyway:
+    out-of-order: true
 
 # Local-only development secrets. NEVER reuse these anywhere real; they exist so the app boots
 # without external secret management on a developer machine.

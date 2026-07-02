@@ -1,0 +1,29 @@
+package ru.adiaphora.platform.rules.domain.rules;
+
+import ru.adiaphora.platform.rules.api.RuleOutcome;
+import ru.adiaphora.platform.rules.api.RuleSeverity;
+import ru.adiaphora.platform.rules.domain.BankruptcyRule;
+import ru.adiaphora.platform.rules.domain.RuleContext;
+import ru.adiaphora.platform.rules.domain.RuleEvaluation;
+import ru.adiaphora.platform.rules.domain.RuleInputs;
+
+/** Routes cases with a mortgaged home to manual review. Placeholder. */
+public class MortgageManualReviewRule implements BankruptcyRule {
+
+    @Override
+    public String code() {
+        return "MANUAL-REVIEW-MORTGAGE";
+    }
+
+    @Override
+    public RuleEvaluation evaluate(RuleContext context) {
+        return context.bool(RuleInputs.OWNS_MORTGAGED_HOME)
+                .map(owns -> owns
+                        ? new RuleEvaluation(code(), RuleOutcome.FAILED, RuleSeverity.MANUAL_REVIEW,
+                        "owns mortgaged home", "A mortgaged home requires manual legal review.", true)
+                        : new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
+                        "no mortgaged home", null, false))
+                .orElseGet(() -> new RuleEvaluation(code(), RuleOutcome.NOT_APPLICABLE, RuleSeverity.INFO,
+                        "mortgage question unanswered", null, false));
+    }
+}

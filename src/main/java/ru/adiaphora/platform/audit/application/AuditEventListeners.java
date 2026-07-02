@@ -14,6 +14,7 @@ import ru.adiaphora.platform.auth.api.UserLoginSucceededEvent;
 import ru.adiaphora.platform.auth.api.UserRegisteredEvent;
 import ru.adiaphora.platform.common.security.CurrentUser;
 import ru.adiaphora.platform.questionnaire.api.AnswerUpdatedEvent;
+import ru.adiaphora.platform.rules.api.RulesEvaluatedEvent;
 
 /**
  * Translates domain events published by other modules into immutable audit records. This is the only
@@ -94,6 +95,20 @@ class AuditEventListeners {
         recorder.record(AuditEvent.builder()
                 .actor(event.actorId(), currentRole())
                 .action(AuditAction.APPLICATION_STATUS_CHANGED)
+                .object("Application", event.applicationId())
+                .applicationId(event.applicationId())
+                .metadata(metadata), event.occurredAt());
+    }
+
+    // --- rules ----------------------------------------------------------------
+
+    @EventListener
+    void on(RulesEvaluatedEvent event) {
+        String metadata = "{\"route\":\"" + event.route() + "\",\"manualReviewRequired\":"
+                + event.manualReviewRequired() + "}";
+        recorder.record(AuditEvent.builder()
+                .actor(null, currentRole())
+                .action(AuditAction.RULES_EVALUATED)
                 .object("Application", event.applicationId())
                 .applicationId(event.applicationId())
                 .metadata(metadata), event.occurredAt());
