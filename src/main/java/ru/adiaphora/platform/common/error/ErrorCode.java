@@ -1,0 +1,17 @@
+package ru.adiaphora.platform.common.error;
+
+/**
+ * Stable, client-facing error codes. These are part of the API contract and must not leak
+ * framework or database details. Add new values here rather than inventing ad-hoc strings.
+ */
+public enum ErrorCode {
+    VALIDATION_ERROR,
+    RESOURCE_NOT_FOUND,
+    ACCESS_DENIED,
+    INVALID_STATE,
+    QUESTIONNAIRE_VALIDATION_ERROR,
+    RULES_EVALUATION_ERROR,
+    DOCUMENT_GENERATION_ERROR,
+    AUTHENTICATION_FAILED,
+    INTERNAL_ERROR
+}

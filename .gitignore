@@ -1,0 +1,24 @@
+# Build output
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+
+# Local secrets / runtime
+.env
+var/
+*.log
+
+# Generated module docs
+/spring-modulith-docs/
