@@ -1,5 +1,7 @@
 # Adiaphora Bankruptcy Platform
 
+[![CI](https://github.com/GalinaBP/adiaphora/actions/workflows/ci.yml/badge.svg)](https://github.com/GalinaBP/adiaphora/actions/workflows/ci.yml)
+
 Backend for a document-preparation platform for Russian personal-bankruptcy cases. It is built as a
 **modular monolith**: one Spring Boot application, one MySQL database, one deployable artifact, with
 strictly enforced module boundaries.
