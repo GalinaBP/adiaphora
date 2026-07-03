@@ -13,6 +13,8 @@ import ru.adiaphora.platform.auth.api.UserLoginFailedEvent;
 import ru.adiaphora.platform.auth.api.UserLoginSucceededEvent;
 import ru.adiaphora.platform.auth.api.UserRegisteredEvent;
 import ru.adiaphora.platform.common.security.CurrentUser;
+import ru.adiaphora.platform.document.api.DocumentDownloadedEvent;
+import ru.adiaphora.platform.document.api.DocumentRequestedEvent;
 import ru.adiaphora.platform.questionnaire.api.AnswerUpdatedEvent;
 import ru.adiaphora.platform.review.api.ReviewAssignedEvent;
 import ru.adiaphora.platform.review.api.ReviewDecisionRecordedEvent;
@@ -136,6 +138,26 @@ class AuditEventListeners {
                 .object("Review", event.reviewId())
                 .applicationId(event.applicationId())
                 .metadata("{\"decision\":\"" + event.decision() + "\"}"), event.occurredAt());
+    }
+
+    // --- document -------------------------------------------------------------
+
+    @EventListener
+    void on(DocumentRequestedEvent event) {
+        recorder.record(AuditEvent.builder()
+                .actor(event.actorId(), currentRole())
+                .action(AuditAction.DOCUMENT_REQUESTED)
+                .object("Document", event.documentId())
+                .applicationId(event.applicationId()), event.occurredAt());
+    }
+
+    @EventListener
+    void on(DocumentDownloadedEvent event) {
+        recorder.record(AuditEvent.builder()
+                .actor(event.actorId(), currentRole())
+                .action(AuditAction.DOCUMENT_DOWNLOADED)
+                .object("Document", event.documentId())
+                .applicationId(event.applicationId()), event.occurredAt());
     }
 
     // --- questionnaire --------------------------------------------------------
