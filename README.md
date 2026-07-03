@@ -9,7 +9,7 @@ strictly enforced module boundaries.
 
 ## Prerequisites
 
-- **JDK 25** (the build targets Java 25)
+- **JDK 21** (the build targets Java 21; Spring Boot 4.1 supports 17+)
 - **Maven 3.9+** (or use the wrapper — see below)
 - **Docker + Docker Compose** (for MySQL and containerised runs)
 - MySQL 8.4 if you prefer to run the database yourself
@@ -124,8 +124,8 @@ flowchart LR
 
 ## Known limitations
 
-- Java 25 / Spring Boot 4.1 / Spring Modulith 2.0 versions are pinned in `pom.xml`; confirm they match
-  your available toolchain before the first build.
+- Targets Java 21 (Spring Boot 4.1 / Spring Modulith 2.0). If those exact dependency versions do not
+  resolve from your Maven repositories, adjust them in `pom.xml` (e.g. Spring Boot 4.0.x).
 - Rules and questionnaire content are **placeholders pending legal review**.
 - Document generation is interface-only; the development storage adapter is filesystem/in-memory and
   is **not production-grade**.
