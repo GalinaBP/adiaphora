@@ -2,14 +2,16 @@ package ru.adiaphora.platform.support;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -17,14 +19,18 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
 
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
  * Base class for integration tests: boots the full application against a real MySQL 8.4 started by
  * Testcontainers, with Flyway applying the migrations. Requires a running Docker daemon.
+ *
+ * <p>MockMvc is built manually from the {@link WebApplicationContext} with the Spring Security filter
+ * chain applied — Spring Boot 4 split the MockMvc test slice into a module not on the classpath, so we
+ * avoid {@code @AutoConfigureMockMvc} and wire it here instead.
  */
 @SpringBootTest
-@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Testcontainers
 public abstract class AbstractIntegrationTest {
@@ -44,10 +50,19 @@ public abstract class AbstractIntegrationTest {
     }
 
     @Autowired
-    protected MockMvc mockMvc;
+    protected WebApplicationContext webApplicationContext;
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    protected MockMvc mockMvc;
+
+    @BeforeEach
+    void setUpMockMvc() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+    }
 
     /** Registers a user via the API and returns the created user id. */
     protected String register(String email, String password) throws Exception {
