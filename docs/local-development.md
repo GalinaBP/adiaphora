@@ -40,7 +40,27 @@ Uses the `local` profile by default (see `application-local.yml`).
 ./mvnw clean verify
 ```
 
-Integration tests need Docker running (Testcontainers starts MySQL automatically).
+Unit, architecture, and Spring Modulith tests run with no infrastructure. Integration tests
+(`*IntegrationTest`) need Docker running — Testcontainers starts a single shared MySQL 8.4.
+
+### Running integration tests with Colima + Docker Engine 29
+
+Docker Engine 29 dropped older API versions, and Colima's socket needs to be advertised to
+Testcontainers. On this setup the suite runs green with:
+
+```bash
+# One-time: point Testcontainers at the Colima socket
+cat > ~/.testcontainers.properties <<'EOF'
+docker.host=unix:///Users/<you>/.colima/default/docker.sock
+ryuk.disabled=true
+EOF
+
+export TESTCONTAINERS_RYUK_DISABLED=true
+./mvnw verify -DargLine="-Dapi.version=1.44"   # pin the Docker API version for Engine 29
+```
+
+With Docker Desktop (which negotiates the API version and mounts the socket normally) none of the
+above is needed — `./mvnw verify` works directly.
 
 ## Seed accounts (local profile only)
 

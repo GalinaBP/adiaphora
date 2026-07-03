@@ -120,7 +120,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      # Use 127.0.0.1 (nginx listens on IPv4; "localhost" resolves to ::1 in the container).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
