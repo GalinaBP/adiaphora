@@ -144,3 +144,7 @@ flowchart LR
 - [docs/database.md](docs/database.md)
 - [docs/api.md](docs/api.md)
 - [docs/local-development.md](docs/local-development.md)
+
+## License
+
+Proprietary — all rights reserved. See [LICENSE](LICENSE).
