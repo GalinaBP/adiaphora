@@ -11,15 +11,20 @@ mvn -N wrapper:wrapper   # generates ./mvnw and ./mvnw.cmd
 
 ```bash
 docker compose up --build
-# with Adminer + Mailpit:
+# with the optional Adminer DB UI:
 docker compose --profile dev-tools up --build
 ```
 
+Core services (all with health checks): `mysql`, `minio` (+ one-shot `createbuckets`), `mailpit`,
+`backend`, `frontend`.
+
+- Frontend: <http://localhost:3000> (placeholder container; proxies `/api` to the backend)
 - API: <http://localhost:8080>
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
 - Health: <http://localhost:8080/actuator/health>
+- MinIO console: <http://localhost:9001> (S3 API on :9000)
+- Mailpit: <http://localhost:8025>
 - Adminer: <http://localhost:8081> (dev-tools profile)
-- Mailpit: <http://localhost:8025> (dev-tools profile)
 
 ## Run the app against your own MySQL
 

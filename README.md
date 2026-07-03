@@ -46,14 +46,17 @@ is verified automatically (see Tests).
 
 ## Local startup
 
-Full stack (MySQL + app) via Compose:
+Full stack via Compose — MySQL, MinIO (object storage), Mailpit (mail), backend, and a placeholder
+frontend, all with health checks:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Optional dev tools (Adminer on :8081, Mailpit on :8025):
+Services: frontend :3000 · backend :8080 · MySQL :3306 · MinIO :9000 (console :9001) · Mailpit :8025.
+
+Optional dev tools (Adminer DB UI on :8081):
 
 ```bash
 docker compose --profile dev-tools up --build

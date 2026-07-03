@@ -16,6 +16,11 @@ RUN mvn -B -q clean package -DskipTests
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
+# curl is used by the container health check against the actuator endpoint.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Run as a non-root user.
 RUN useradd --system --uid 10001 --create-home appuser
 USER appuser
