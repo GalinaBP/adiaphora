@@ -25,12 +25,25 @@ class QuestionnaireApiIntegrationTest extends AbstractIntegrationTest {
     private QuestionSectionJpaRepository sections;
     @Autowired
     private QuestionDefinitionJpaRepository questions;
+    @Autowired
+    private QuestionOptionJpaRepository options;
+    @Autowired
+    private QuestionnaireResponseJpaRepository responses;
+    @Autowired
+    private QuestionAnswerJpaRepository answers;
 
+    // Reset the questionnaire definition/response tables before each test, then seed this class's own
+    // single-question version. Needed because the integration tests share one database (singleton
+    // container) and another class seeds a different active version.
     @BeforeEach
     void seedActiveVersion() {
-        if (versions.existsByStatus(VersionStatus.ACTIVE)) {
-            return;
-        }
+        answers.deleteAll();
+        responses.deleteAll();
+        options.deleteAll();
+        questions.deleteAll();
+        sections.deleteAll();
+        versions.deleteAll();
+
         UUID versionId = UUID.randomUUID();
         versions.save(new QuestionnaireVersionEntity(versionId, "test-v1", "Test questionnaire",
                 VersionStatus.ACTIVE));

@@ -1,6 +1,6 @@
 package ru.adiaphora.platform.questionnaire.infrastructure;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,15 +39,26 @@ class ManualReviewFlowIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private QuestionDefinitionJpaRepository questions;
     @Autowired
+    private QuestionOptionJpaRepository options;
+    @Autowired
+    private QuestionnaireResponseJpaRepository responses;
+    @Autowired
+    private QuestionAnswerJpaRepository answers;
+    @Autowired
     private UserRepository users;
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // Shared DB (singleton container): reset questionnaire tables, then seed this flow's version.
     @BeforeEach
     void seedQuestionnaire() {
-        if (versions.existsByStatus(VersionStatus.ACTIVE)) {
-            return;
-        }
+        answers.deleteAll();
+        responses.deleteAll();
+        options.deleteAll();
+        questions.deleteAll();
+        sections.deleteAll();
+        versions.deleteAll();
+
         UUID versionId = UUID.randomUUID();
         versions.save(new QuestionnaireVersionEntity(versionId, "flow-v1", "Flow questionnaire",
                 VersionStatus.ACTIVE));
