@@ -14,6 +14,8 @@ import ru.adiaphora.platform.auth.api.UserLoginSucceededEvent;
 import ru.adiaphora.platform.auth.api.UserRegisteredEvent;
 import ru.adiaphora.platform.common.security.CurrentUser;
 import ru.adiaphora.platform.questionnaire.api.AnswerUpdatedEvent;
+import ru.adiaphora.platform.review.api.ReviewAssignedEvent;
+import ru.adiaphora.platform.review.api.ReviewDecisionRecordedEvent;
 import ru.adiaphora.platform.rules.api.RulesEvaluatedEvent;
 
 /**
@@ -112,6 +114,28 @@ class AuditEventListeners {
                 .object("Application", event.applicationId())
                 .applicationId(event.applicationId())
                 .metadata(metadata), event.occurredAt());
+    }
+
+    // --- review ---------------------------------------------------------------
+
+    @EventListener
+    void on(ReviewAssignedEvent event) {
+        recorder.record(AuditEvent.builder()
+                .actor(null, currentRole())
+                .action(AuditAction.REVIEW_ASSIGNED)
+                .object("Review", event.reviewId())
+                .applicationId(event.applicationId())
+                .metadata("{\"assigneeId\":\"" + event.assigneeId() + "\"}"), event.occurredAt());
+    }
+
+    @EventListener
+    void on(ReviewDecisionRecordedEvent event) {
+        recorder.record(AuditEvent.builder()
+                .actor(event.reviewerId(), currentRole())
+                .action(AuditAction.REVIEW_DECISION_RECORDED)
+                .object("Review", event.reviewId())
+                .applicationId(event.applicationId())
+                .metadata("{\"decision\":\"" + event.decision() + "\"}"), event.occurredAt());
     }
 
     // --- questionnaire --------------------------------------------------------
