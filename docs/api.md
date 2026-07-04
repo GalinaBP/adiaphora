@@ -1,9 +1,5 @@
 # API
 
-The canonical, hand-authored contract lives in [`openapi.yaml`](../openapi.yaml) (OpenAPI 3.0, v0.1 —
-auth, applications, questionnaire/answers, evaluation, reviews, audit). The running app also serves a
-springdoc-generated spec at `/v3/api-docs` and Swagger UI (local profile).
-
 ## Conventions
 
 - Base path `/api/v1`; JSON only; camelCase properties.
