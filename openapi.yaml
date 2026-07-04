@@ -1,0 +1,981 @@
+openapi: 3.0.3
+
+# =============================================================================
+# Adiaphora Bankruptcy Platform — API contract v0.1 (AI-004)
+#
+# Hand-authored contract for the endpoints delivered in Phase 2/3, covering the
+# six areas named in AI-004: authentication, applications, answers
+# (questionnaire), evaluation (rules), reviews, and audit.
+#
+# It mirrors the live controllers and DTOs exactly; the running app also exposes
+# a springdoc-generated spec at /v3/api-docs (local profile). Kept in sync by
+# hand until contract tests are added.
+#
+# Out of scope for v0.1 (intentionally omitted): document generation/download
+# (`/documents/**`) — deferred to a later contract revision.
+#
+# Sensitive-data policy (AI-004 acceptance): passwords are writeOnly and never
+# returned; password hashes are never modelled; RuleFinding exposes only the
+# user-facing message, never the rule's internal reasoning; error payloads carry
+# stable codes, never framework/DB details.
+# =============================================================================
+
+info:
+  title: Adiaphora Bankruptcy Platform API
+  description: >-
+    Document-preparation platform for Russian personal-bankruptcy cases.
+    Stateless JSON API under `/api/v1`; authentication is bearer JWT.
+  version: 0.1.0
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: Registration, login, token refresh, logout, current-user profile.
+  - name: Applications
+    description: The bankruptcy case lifecycle.
+  - name: Questionnaire
+    description: Questionnaire definition, an application's form, and answers.
+  - name: Rules
+    description: Deterministic rule-engine evaluation of an application.
+  - name: Reviews
+    description: Manual review workflow (staff roles only).
+  - name: Audit
+    description: Read-only, immutable audit trail (ADMIN/AUDITOR only).
+
+# Bearer JWT is required by default for every operation; public endpoints
+# override this with `security: []`.
+security:
+  - bearerAuth: []
+
+paths:
+
+  # ---------------------------------------------------------------- Authentication
+  /api/v1/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate and obtain an access + refresh token pair
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Exchange a refresh token for a new token pair
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200':
+          description: New token pair issued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Log out, revoking outstanding refresh tokens
+      responses:
+        '204': { description: Logged out }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/auth/me:
+    get:
+      tags: [Authentication]
+      summary: Return the authenticated user's profile
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ---------------------------------------------------------------- Applications
+  /api/v1/applications:
+    post:
+      tags: [Applications]
+      summary: Create a new bankruptcy case for the current user
+      responses:
+        '201':
+          description: Case created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateApplicationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    get:
+      tags: [Applications]
+      summary: List cases visible to the current user
+      description: A `USER` sees only their own cases; staff roles see all.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortParam'
+      responses:
+        '200':
+          description: Page of cases
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageApplicationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/applications/{applicationId}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    get:
+      tags: [Applications]
+      summary: Get a single case
+      responses:
+        '200':
+          description: The case
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApplicationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/applications/{applicationId}/submit:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    post:
+      tags: [Applications]
+      summary: Submit a case for evaluation
+      responses:
+        '204': { description: Submitted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+
+  /api/v1/applications/{applicationId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    post:
+      tags: [Applications]
+      summary: Cancel a case
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CancelApplicationRequest' }
+      responses:
+        '204': { description: Cancelled }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+
+  /api/v1/applications/{applicationId}/status-history:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    get:
+      tags: [Applications]
+      summary: Get the status history of a case
+      responses:
+        '200':
+          description: Ordered status changes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StatusHistoryEntry' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- Questionnaire / answers
+  /api/v1/questionnaires/current:
+    get:
+      tags: [Questionnaire]
+      summary: Get the current active questionnaire definition
+      responses:
+        '200':
+          description: The active definition
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DefinitionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/applications/{applicationId}/questionnaire:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    get:
+      tags: [Questionnaire]
+      summary: Get an application's questionnaire with saved answers and completion
+      responses:
+        '200':
+          description: The form, saved answers, and completion summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FormResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/applications/{applicationId}/questionnaire/validate:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    post:
+      tags: [Questionnaire]
+      summary: Validate the whole questionnaire
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/applications/{applicationId}/answers/{questionCode}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+      - name: questionCode
+        in: path
+        required: true
+        description: Code of the question being answered.
+        schema: { type: string, maxLength: 64 }
+    put:
+      tags: [Questionnaire]
+      summary: Save a single answer incrementally
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaveAnswerRequest' }
+      responses:
+        '200':
+          description: Updated completion summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompletionResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- Rules / evaluation
+  /api/v1/applications/{applicationId}/evaluate:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    post:
+      tags: [Rules]
+      summary: Evaluate the application against the deterministic rule engine
+      responses:
+        '200':
+          description: Evaluation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RulesEvaluationResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+
+  /api/v1/applications/{applicationId}/evaluations/latest:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    get:
+      tags: [Rules]
+      summary: Get the latest evaluation result for the application
+      responses:
+        '200':
+          description: Latest evaluation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RulesEvaluationResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- Reviews
+  /api/v1/reviews:
+    get:
+      tags: [Reviews]
+      summary: List reviews
+      description: Restricted to `OPERATOR`, `LAWYER`, `ADMIN`, `AUDITOR` by the URL security matrix.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortParam'
+      responses:
+        '200':
+          description: Page of reviews
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageReviewResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/reviews/{reviewId}:
+    parameters:
+      - $ref: '#/components/parameters/ReviewIdPath'
+    get:
+      tags: [Reviews]
+      summary: Get a review
+      responses:
+        '200':
+          description: The review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/reviews/{reviewId}/assign:
+    parameters:
+      - $ref: '#/components/parameters/ReviewIdPath'
+    post:
+      tags: [Reviews]
+      summary: Assign a review to an operator/lawyer (ADMIN only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssignReviewRequest' }
+      responses:
+        '200':
+          description: Updated review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/reviews/{reviewId}/request-information:
+    parameters:
+      - $ref: '#/components/parameters/ReviewIdPath'
+    post:
+      tags: [Reviews]
+      summary: Request additional information (OPERATOR/LAWYER/ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RequestInformationRequest' }
+      responses:
+        '200':
+          description: Updated review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/reviews/{reviewId}/approve:
+    parameters:
+      - $ref: '#/components/parameters/ReviewIdPath'
+    post:
+      tags: [Reviews]
+      summary: Approve a review (LAWYER/ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApproveReviewRequest' }
+      responses:
+        '200':
+          description: Updated review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+
+  /api/v1/reviews/{reviewId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/ReviewIdPath'
+    post:
+      tags: [Reviews]
+      summary: Reject a review (LAWYER/ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RejectReviewRequest' }
+      responses:
+        '200':
+          description: Updated review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+
+  # ---------------------------------------------------------------- Audit
+  /api/v1/audit/events:
+    get:
+      tags: [Audit]
+      summary: List audit events, optionally filtered by application
+      description: Restricted to `ADMIN`, `AUDITOR` by the URL security matrix.
+      parameters:
+        - name: applicationId
+          in: query
+          required: false
+          description: Filter to events for a single application.
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortParam'
+      responses:
+        '200':
+          description: Page of audit events
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageAuditEventResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/audit/events/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Audit]
+      summary: Get a single audit event
+      responses:
+        '200':
+          description: The audit event
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditEventResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ApplicationIdPath:
+      name: applicationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ReviewIdPath:
+      name: reviewId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Zero-based page index.
+      schema: { type: integer, minimum: 0, default: 0 }
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      description: Page size.
+      schema: { type: integer, minimum: 1, default: 20 }
+    SortParam:
+      name: sort
+      in: query
+      required: false
+      description: "Sort as `property,(asc|desc)`; may be repeated."
+      schema:
+        type: array
+        items: { type: string }
+
+  responses:
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Forbidden:
+      description: Authenticated but not permitted (role or ownership)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    InvalidState:
+      description: Operation not allowed in the resource's current state
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+
+  schemas:
+
+    # ---- Cross-cutting ----
+    ApiError:
+      type: object
+      description: >-
+        Uniform error payload returned by every endpoint on failure. `fieldErrors`
+        is omitted when empty. `code` is a stable client-facing value; framework
+        and database details are never exposed.
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer, example: 400 }
+        code: { $ref: '#/components/schemas/ErrorCode' }
+        message: { type: string, example: Validation failed }
+        path: { type: string, example: /api/v1/auth/register }
+        correlationId:
+          type: string
+          description: Echoes the request's X-Correlation-Id.
+        fieldErrors:
+          type: array
+          items: { $ref: '#/components/schemas/ApiFieldError' }
+      required: [timestamp, status, code, message, path, correlationId]
+
+    ApiFieldError:
+      type: object
+      properties:
+        field: { type: string, example: email }
+        message: { type: string, example: must be a well-formed email address }
+      required: [field, message]
+
+    ErrorCode:
+      type: string
+      enum:
+        - VALIDATION_ERROR
+        - RESOURCE_NOT_FOUND
+        - ACCESS_DENIED
+        - INVALID_STATE
+        - QUESTIONNAIRE_VALIDATION_ERROR
+        - RULES_EVALUATION_ERROR
+        - DOCUMENT_GENERATION_ERROR
+        - AUTHENTICATION_FAILED
+        - INTERNAL_ERROR
+
+    Page:
+      type: object
+      description: Pagination envelope; concrete responses set the `items` element type.
+      properties:
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+      required: [page, size, totalElements, totalPages]
+
+    # ---- Enums ----
+    UserRole:
+      type: string
+      enum: [USER, OPERATOR, LAWYER, ADMIN, AUDITOR]
+    UserStatus:
+      type: string
+      enum: [PENDING_ACTIVATION, ACTIVE]
+    BankruptcyApplicationStatus:
+      type: string
+      enum:
+        - DRAFT
+        - QUESTIONNAIRE_IN_PROGRESS
+        - READY_FOR_EVALUATION
+        - NEEDS_INFORMATION
+        - MANUAL_REVIEW_REQUIRED
+        - UNDER_REVIEW
+        - APPROVED_FOR_DOCUMENT_GENERATION
+        - DOCUMENTS_READY
+        - COMPLETED
+    BankruptcyRoute:
+      type: string
+      enum:
+        - NOT_EVALUATED
+        - MFC_PRELIMINARY
+        - COURT_PRELIMINARY
+        - MANUAL_REVIEW
+        - INSUFFICIENT_INFORMATION
+    ReviewStatus:
+      type: string
+      enum:
+        - OPEN
+        - ASSIGNED
+        - WAITING_FOR_INFORMATION
+        - IN_PROGRESS
+        - APPROVED
+        - REJECTED
+    QuestionType:
+      type: string
+      enum: [TEXT, TEXTAREA, INTEGER, MONEY, BOOLEAN, SINGLE_CHOICE, MULTIPLE_CHOICE]
+    RuleOutcome:
+      type: string
+      enum: [PASSED, FAILED, NOT_APPLICABLE, NEEDS_INFORMATION]
+    RuleSeverity:
+      type: string
+      enum: [INFO, WARNING, MANUAL_REVIEW, BLOCKING]
+    AuditAction:
+      type: string
+      enum:
+        - USER_REGISTERED
+        - USER_LOGIN_SUCCEEDED
+        - USER_LOGIN_FAILED
+        - APPLICATION_CREATED
+        - APPLICATION_VIEWED
+        - APPLICATION_SUBMITTED
+        - APPLICATION_CANCELLED
+        - APPLICATION_STATUS_CHANGED
+        - ANSWER_UPDATED
+        - RULES_EVALUATED
+        - REVIEW_ASSIGNED
+        - REVIEW_DECISION_RECORDED
+        - DOCUMENT_REQUESTED
+        - DOCUMENT_DOWNLOADED
+    AuditResult:
+      type: string
+      enum: [SUCCESS, FAILURE]
+
+    # ---- Authentication ----
+    RegisterRequest:
+      type: object
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 100
+          writeOnly: true
+      required: [email, password]
+    RegisterResponse:
+      type: object
+      properties:
+        userId: { type: string, format: uuid }
+      required: [userId]
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password, writeOnly: true }
+      required: [email, password]
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken: { type: string, writeOnly: true }
+      required: [refreshToken]
+    TokenResponse:
+      type: object
+      description: Bearer access token plus a longer-lived refresh token.
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+        expiresIn:
+          type: integer
+          format: int64
+          description: Access-token lifetime in seconds.
+      required: [accessToken, refreshToken, tokenType, expiresIn]
+    MeResponse:
+      type: object
+      description: Current user's profile. Never includes a password or password hash.
+      properties:
+        userId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { $ref: '#/components/schemas/UserRole' }
+        status: { $ref: '#/components/schemas/UserStatus' }
+      required: [userId, email, role, status]
+
+    # ---- Applications ----
+    CreateApplicationResponse:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+      required: [applicationId]
+    CancelApplicationRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 500, nullable: true }
+    ApplicationResponse:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        ownerId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/BankruptcyApplicationStatus' }
+        route: { $ref: '#/components/schemas/BankruptcyRoute' }
+        submittedAt: { type: string, format: date-time, nullable: true }
+      required: [applicationId, ownerId, status, route]
+    StatusHistoryEntry:
+      type: object
+      properties:
+        fromStatus:
+          allOf: [{ $ref: '#/components/schemas/BankruptcyApplicationStatus' }]
+          nullable: true
+        toStatus: { $ref: '#/components/schemas/BankruptcyApplicationStatus' }
+        reason: { type: string, nullable: true }
+        actorId: { type: string, format: uuid, nullable: true }
+        changedAt: { type: string, format: date-time }
+      required: [toStatus, changedAt]
+    PageApplicationResponse:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ApplicationResponse' }
+          required: [items]
+
+    # ---- Questionnaire / answers ----
+    SaveAnswerRequest:
+      type: object
+      properties:
+        value: { type: string, maxLength: 4000, nullable: true }
+    OptionResponse:
+      type: object
+      properties:
+        value: { type: string }
+        label: { type: string }
+        displayOrder: { type: integer }
+      required: [value, label, displayOrder]
+    QuestionResponse:
+      type: object
+      properties:
+        code: { type: string }
+        sectionCode: { type: string }
+        type: { $ref: '#/components/schemas/QuestionType' }
+        label: { type: string }
+        helpText: { type: string, nullable: true }
+        required: { type: boolean }
+        displayOrder: { type: integer }
+        options:
+          type: array
+          items: { $ref: '#/components/schemas/OptionResponse' }
+      required: [code, sectionCode, type, label, required, displayOrder, options]
+    SectionResponse:
+      type: object
+      properties:
+        code: { type: string }
+        title: { type: string }
+        displayOrder: { type: integer }
+      required: [code, title, displayOrder]
+    DefinitionResponse:
+      type: object
+      properties:
+        versionCode: { type: string }
+        label: { type: string }
+        sections:
+          type: array
+          items: { $ref: '#/components/schemas/SectionResponse' }
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/QuestionResponse' }
+      required: [versionCode, label, sections, questions]
+    CompletionResponse:
+      type: object
+      properties:
+        requiredTotal: { type: integer }
+        requiredAnswered: { type: integer }
+        missingRequired:
+          type: array
+          items: { type: string }
+        complete: { type: boolean }
+      required: [requiredTotal, requiredAnswered, missingRequired, complete]
+    FormResponse:
+      type: object
+      properties:
+        applicationId: { type: string, format: uuid }
+        versionCode: { type: string }
+        label: { type: string }
+        sections:
+          type: array
+          items: { $ref: '#/components/schemas/SectionResponse' }
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/QuestionResponse' }
+        answers:
+          type: object
+          description: Saved answers keyed by question code.
+          additionalProperties: { type: string }
+        completion: { $ref: '#/components/schemas/CompletionResponse' }
+      required: [applicationId, versionCode, label, sections, questions, answers, completion]
+    ValidationResponse:
+      type: object
+      properties:
+        complete: { type: boolean }
+        missingRequired:
+          type: array
+          items: { type: string }
+        fieldErrors:
+          type: array
+          items: { $ref: '#/components/schemas/ApiFieldError' }
+      required: [complete, missingRequired, fieldErrors]
+
+    # ---- Rules / evaluation ----
+    RuleFinding:
+      type: object
+      description: >-
+        Client-safe finding for a triggered rule. Intentionally excludes the
+        rule's internal reasoning — only the user-facing message is exposed.
+      properties:
+        ruleCode: { type: string }
+        outcome: { $ref: '#/components/schemas/RuleOutcome' }
+        severity: { $ref: '#/components/schemas/RuleSeverity' }
+        userMessage: { type: string, nullable: true }
+        blocksAutomaticDecision: { type: boolean }
+      required: [ruleCode, outcome, severity, blocksAutomaticDecision]
+    RulesEvaluationResult:
+      type: object
+      properties:
+        evaluationId: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        rulesetVersion: { type: string }
+        questionnaireVersion:
+          type: string
+          nullable: true
+          description: Null when no questionnaire answers exist yet.
+        route: { $ref: '#/components/schemas/BankruptcyRoute' }
+        manualReviewRequired: { type: boolean }
+        triggeredRules:
+          type: array
+          items: { $ref: '#/components/schemas/RuleFinding' }
+        missingInformation:
+          type: array
+          items: { type: string }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+      required:
+        - evaluationId
+        - applicationId
+        - rulesetVersion
+        - route
+        - manualReviewRequired
+        - triggeredRules
+        - missingInformation
+        - startedAt
+        - completedAt
+
+    # ---- Reviews ----
+    AssignReviewRequest:
+      type: object
+      properties:
+        assigneeId: { type: string, format: uuid }
+      required: [assigneeId]
+    RequestInformationRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 1000 }
+      required: [reason]
+    ApproveReviewRequest:
+      type: object
+      description: Optionally override the preliminary route on approval.
+      properties:
+        newRoute:
+          allOf: [{ $ref: '#/components/schemas/BankruptcyRoute' }]
+          nullable: true
+        reason: { type: string, maxLength: 1000, nullable: true }
+    RejectReviewRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 1000 }
+      required: [reason]
+    ReviewResponse:
+      type: object
+      properties:
+        reviewId: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/ReviewStatus' }
+        assigneeId: { type: string, format: uuid, nullable: true }
+        route: { $ref: '#/components/schemas/BankruptcyRoute' }
+        rulesetVersion: { type: string }
+        lastDecisionReason: { type: string, nullable: true }
+      required: [reviewId, applicationId, status, route, rulesetVersion]
+    PageReviewResponse:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ReviewResponse' }
+          required: [items]
+
+    # ---- Audit ----
+    AuditEventResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        occurredAt: { type: string, format: date-time }
+        actorId: { type: string, format: uuid, nullable: true }
+        actorRole: { type: string, nullable: true }
+        action: { $ref: '#/components/schemas/AuditAction' }
+        objectType: { type: string, nullable: true }
+        objectId: { type: string, format: uuid, nullable: true }
+        applicationId: { type: string, format: uuid, nullable: true }
+        result: { $ref: '#/components/schemas/AuditResult' }
+        correlationId: { type: string, nullable: true }
+        metadata: { type: string, nullable: true }
+      required: [id, occurredAt, action, result]
+    PageAuditEventResponse:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AuditEventResponse' }
+          required: [items]
