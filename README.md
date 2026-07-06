@@ -1,4 +1,4 @@
-# Adiaphora Bankruptcy Platform
+cAI-003	Week 1	P0	Draft relational schema and Flyway migrations	Design users, roles, applications, answers, creditors, assets, transactions, rules, evaluations, reviews, documents and audit events.	V001–V00N migration scripts	Foreign keys and indexes exist; migrations run on empty DB; JPA validates	Developer and product owner review fields	Testcontainers migration test	AI-001	6.0	Not Started														# Adiaphora Bankruptcy Platform
 
 [![CI](https://github.com/GalinaBP/adiaphora/actions/workflows/ci.yml/badge.svg)](https://github.com/GalinaBP/adiaphora/actions/workflows/ci.yml)
 
