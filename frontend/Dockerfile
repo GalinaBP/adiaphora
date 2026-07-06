@@ -1,6 +1,13 @@
-# Placeholder frontend container: serves a static page and proxies /api to the backend.
-# Replace with the real SPA build (e.g. Vite) when the frontend is implemented.
+# Multi-stage build for the Vite React SPA. Stage 1 builds the static bundle;
+# stage 2 serves it with nginx and proxies /api to the backend (see nginx.conf).
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
+COPY . .
+RUN npm run build
+
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY index.html /usr/share/nginx/html/index.html
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
