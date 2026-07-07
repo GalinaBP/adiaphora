@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { QuestionResponse } from '../api/types';
 
 interface Props {
@@ -6,22 +6,43 @@ interface Props {
   value: string;
   // Called when the user finishes editing (blur / change for discrete inputs).
   onCommit: (value: string) => void;
+  // Validation message to surface for this question, if any (from the backend).
+  error?: string | null;
 }
 
 // Renders a single question as the appropriate input for its type. Purely a presentational
-// mapping from QuestionType to a control — no validation beyond the HTML `required` hint.
-export default function QuestionField({ question, value, onCommit }: Props) {
+// mapping from QuestionType to a control — no validation beyond the HTML `required` hint; the
+// authoritative validation is the backend's, surfaced here via the `error` prop.
+export default function QuestionField({ question, value, onCommit, error }: Props) {
   const [local, setLocal] = useState(value);
   const id = `q-${question.code}`;
+  const errorId = `${id}-error`;
+  const helpId = `${id}-help`;
+
+  // Keep the control in sync when the saved value changes underneath us (resume / refetch),
+  // without clobbering in-progress typing (the parent mirrors committed values back as `value`).
+  useEffect(() => {
+    setLocal(value);
+  }, [value]);
+
+  const describedBy =
+    [error ? errorId : null, question.helpText ? helpId : null].filter(Boolean).join(' ') ||
+    undefined;
+
+  const common = {
+    id,
+    required: question.required,
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': describedBy,
+  } as const;
 
   const control = () => {
     switch (question.type) {
       case 'TEXTAREA':
         return (
           <textarea
-            id={id}
+            {...common}
             value={local}
-            required={question.required}
             onChange={(e) => setLocal(e.target.value)}
             onBlur={() => onCommit(local)}
           />
@@ -30,11 +51,10 @@ export default function QuestionField({ question, value, onCommit }: Props) {
       case 'MONEY':
         return (
           <input
-            id={id}
+            {...common}
             type="number"
             inputMode="decimal"
             value={local}
-            required={question.required}
             onChange={(e) => setLocal(e.target.value)}
             onBlur={() => onCommit(local)}
           />
@@ -42,10 +62,9 @@ export default function QuestionField({ question, value, onCommit }: Props) {
       case 'DATE':
         return (
           <input
-            id={id}
+            {...common}
             type="date"
             value={local}
-            required={question.required}
             onChange={(e) => setLocal(e.target.value)}
             onBlur={() => onCommit(local)}
           />
@@ -53,7 +72,7 @@ export default function QuestionField({ question, value, onCommit }: Props) {
       case 'BOOLEAN':
         return (
           <input
-            id={id}
+            {...common}
             type="checkbox"
             checked={local === 'true'}
             onChange={(e) => {
@@ -67,9 +86,8 @@ export default function QuestionField({ question, value, onCommit }: Props) {
       case 'MULTIPLE_CHOICE':
         return (
           <select
-            id={id}
+            {...common}
             value={local}
-            required={question.required}
             onChange={(e) => {
               setLocal(e.target.value);
               onCommit(e.target.value);
@@ -86,10 +104,9 @@ export default function QuestionField({ question, value, onCommit }: Props) {
       default:
         return (
           <input
-            id={id}
+            {...common}
             type="text"
             value={local}
-            required={question.required}
             onChange={(e) => setLocal(e.target.value)}
             onBlur={() => onCommit(local)}
           />
@@ -98,13 +115,22 @@ export default function QuestionField({ question, value, onCommit }: Props) {
   };
 
   return (
-    <div className="field">
+    <div className={`field${error ? ' field-invalid' : ''}`}>
       <label htmlFor={id}>
         {question.label}
         {question.required && <span className="req" aria-hidden="true"> *</span>}
       </label>
       {control()}
-      {question.helpText && <p className="help muted">{question.helpText}</p>}
+      {question.helpText && (
+        <p id={helpId} className="help muted">
+          {question.helpText}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} className="field-error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

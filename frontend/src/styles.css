@@ -195,6 +195,192 @@ select {
   margin: 0.25rem 0 0;
 }
 
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+}
+
+.field-invalid input,
+.field-invalid textarea,
+.field-invalid select {
+  border-color: var(--danger);
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0;
+}
+
+/* --- Questionnaire wizard --- */
+.qn-progress {
+  margin-bottom: 1.25rem;
+}
+
+.qn-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.qn-bar {
+  width: 100%;
+  height: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.qn-bar::-webkit-progress-bar {
+  background: var(--panel-2);
+  border-radius: 999px;
+}
+
+.qn-bar::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.qn-bar::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.qn-steps {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.qn-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  padding: 0.35rem 0.7rem;
+}
+
+.qn-step.current {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.qn-step-num {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: var(--panel-2);
+  font-size: 0.8rem;
+}
+
+.qn-step.current .qn-step-num {
+  background: var(--accent);
+  color: #0b1220;
+}
+
+.qn-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+button.secondary {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+button.link {
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.save-indicator {
+  font-size: 0.85rem;
+}
+
+.save-indicator.saving {
+  color: var(--muted);
+}
+
+.save-indicator.saved {
+  color: var(--accent);
+}
+
+.save-indicator.error {
+  color: var(--danger);
+}
+
+.banner {
+  border: 1px solid var(--danger);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.qn-validation {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+
+.qn-validation.ok {
+  border-color: var(--accent);
+}
+
+.qn-validation.incomplete {
+  border-color: #fcd34d;
+}
+
+.qn-validation ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+@media (max-width: 640px) {
+  .app-main {
+    padding: 1rem;
+  }
+
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .qn-steps {
+    gap: 0.4rem;
+  }
+
+  .qn-step-title {
+    display: none;
+  }
+
+  .qn-nav button {
+    flex: 1;
+  }
+
+  .section {
+    padding: 0.9rem 1rem;
+  }
+}
+
 /* --- Estate panels --- */
 .panel {
   border: 1px solid var(--border);

@@ -48,4 +48,20 @@ describe('QuestionField', () => {
     render(<QuestionField question={question({ type: 'DATE' })} value="" onCommit={vi.fn()} />);
     expect(screen.getByLabelText(/Full name/)).toHaveAttribute('type', 'date');
   });
+
+  it('shows a validation error and marks the control invalid', () => {
+    render(
+      <QuestionField question={question()} value="" onCommit={vi.fn()} error="must be a whole number" />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('must be a whole number');
+    expect(screen.getByLabelText(/Full name/)).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('reflects an externally updated value (resume)', () => {
+    const { rerender } = render(<QuestionField question={question()} value="" onCommit={vi.fn()} />);
+    rerender(<QuestionField question={question()} value="Ivan" onCommit={vi.fn()} />);
+
+    expect(screen.getByLabelText(/Full name/)).toHaveValue('Ivan');
+  });
 });

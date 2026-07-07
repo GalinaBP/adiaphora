@@ -129,6 +129,11 @@ export interface FormResponse {
   answers: Record<string, string>;
   completion: CompletionResponse;
 }
+export interface ValidationResponse {
+  complete: boolean;
+  missingRequired: string[];
+  fieldErrors: ApiFieldError[];
+}
 
 // --- Estate: creditors ---
 export type CreditorType =
