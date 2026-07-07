@@ -26,6 +26,14 @@ ownership.
 Hashed with a delegating encoder (BCrypt by default; Argon2 hashes also verifiable). Plaintext is
 never stored. Password hashes are never returned by any endpoint.
 
+Password reset is **designed but not yet implemented** — see [password-reset.md](password-reset.md)
+for the token model, flow, and security properties (pending security review).
+
+Login is hardened against online guessing: the failure message and response timing are uniform
+whether or not the email exists (a fixed dummy hash is compared when there is no real user), and
+`LoginAttemptTracker` locks an email after 5 consecutive failures for 15 minutes. The lockout is
+in-memory/per-instance for now; a distributed version and per-IP throttling are follow-ups.
+
 ## Tokens
 
 - Access token: short TTL (default 15 min).
