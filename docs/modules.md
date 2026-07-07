@@ -8,6 +8,7 @@
 | `rules`         | Deterministic rule engine, triggered rules, missing info, preliminary route.   | Phase 3 ✅ |
 | `review`        | Manual-review tasks, assignment, decisions, documented route overrides.        | Phase 3 ✅ |
 | `document`      | Templates, generation requests, storage abstraction, download permissions.     | Phase 3 ✅ |
+| `estate`        | Creditors & assets (financial inventory): owner-scoped CRUD, duplicate warnings.| Phase 3 ✅ |
 | `audit`         | Immutable, event-driven audit log; subscribes to domain events.                | Phase 3 ✅ |
 | `common`        | Shared errors, security, web, config, persistence helpers. Shared module.      | Phase 1 ✅ |
 

@@ -79,6 +79,12 @@ export default function ApplicationsPage() {
                     onClick={() => navigate(`/applications/${app.applicationId}/questionnaire`)}
                   >
                     Open
+                  </button>{' '}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/applications/${app.applicationId}/estate`)}
+                  >
+                    Estate
                   </button>
                 </td>
               </tr>

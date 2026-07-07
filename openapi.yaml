@@ -42,6 +42,10 @@ tags:
     description: Questionnaire definition, an application's form, and answers.
   - name: Rules
     description: Deterministic rule-engine evaluation of an application.
+  - name: Creditors
+    description: A case's creditor claims (owner-scoped CRUD, duplicates flagged).
+  - name: Assets
+    description: A case's assets (owner-scoped CRUD, duplicates flagged).
   - name: Reviews
     description: Manual review workflow (staff roles only).
   - name: Audit
@@ -504,6 +508,166 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  # ---------------------------------------------------------------- Creditors
+  /api/v1/applications/{applicationId}/creditors:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    get:
+      tags: [Creditors]
+      summary: List creditors for a case
+      responses:
+        '200':
+          description: Creditors
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CreditorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Creditors]
+      summary: Add a creditor (duplicates are flagged, not rejected)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreditorRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreditorResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/applications/{applicationId}/creditors/{creditorId}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+      - $ref: '#/components/parameters/CreditorIdPath'
+    get:
+      tags: [Creditors]
+      summary: Get a creditor
+      responses:
+        '200':
+          description: The creditor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreditorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Creditors]
+      summary: Edit a creditor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreditorRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreditorResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Creditors]
+      summary: Delete a creditor
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- Assets
+  /api/v1/applications/{applicationId}/assets:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    get:
+      tags: [Assets]
+      summary: List assets for a case
+      responses:
+        '200':
+          description: Assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AssetResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Assets]
+      summary: Add an asset (duplicates are flagged, not rejected)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/applications/{applicationId}/assets/{assetId}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+      - $ref: '#/components/parameters/AssetIdPath'
+    get:
+      tags: [Assets]
+      summary: Get an asset
+      responses:
+        '200':
+          description: The asset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Assets]
+      summary: Edit an asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssetRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Assets]
+      summary: Delete an asset
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
 components:
 
   securitySchemes:
@@ -520,6 +684,16 @@ components:
       schema: { type: string, format: uuid }
     ReviewIdPath:
       name: reviewId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CreditorIdPath:
+      name: creditorId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AssetIdPath:
+      name: assetId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -664,6 +838,12 @@ components:
     QuestionType:
       type: string
       enum: [TEXT, TEXTAREA, INTEGER, MONEY, BOOLEAN, SINGLE_CHOICE, MULTIPLE_CHOICE, DATE]
+    CreditorType:
+      type: string
+      enum: [BANK, MICROFINANCE, INDIVIDUAL, TAX_AUTHORITY, UTILITY, OTHER]
+    AssetType:
+      type: string
+      enum: [REAL_ESTATE, VEHICLE, BANK_ACCOUNT, SECURITIES, CASH, RECEIVABLE, MOVABLE_PROPERTY, OTHER]
     RuleOutcome:
       type: string
       enum: [PASSED, FAILED, NOT_APPLICABLE, NEEDS_INFORMATION]
@@ -980,3 +1160,81 @@ components:
               type: array
               items: { $ref: '#/components/schemas/AuditEventResponse' }
           required: [items]
+
+    # ---- Estate: creditors ----
+    CreditorRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 300 }
+        type: { $ref: '#/components/schemas/CreditorType' }
+        inn: { type: string, maxLength: 12, nullable: true }
+        claimBasis: { type: string, maxLength: 500, nullable: true }
+        currency:
+          type: string
+          maxLength: 3
+          nullable: true
+          description: ISO-4217 code; defaults to RUB when omitted.
+        totalAmount: { type: number, format: double, minimum: 0 }
+        principalAmount: { type: number, format: double, minimum: 0, nullable: true }
+        interestAmount: { type: number, format: double, minimum: 0, nullable: true }
+        penaltyAmount: { type: number, format: double, minimum: 0, nullable: true }
+        overdue: { type: boolean, default: false }
+        secured: { type: boolean, default: false }
+      required: [name, type, totalAmount]
+    CreditorResponse:
+      type: object
+      properties:
+        creditorId: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        name: { type: string }
+        type: { $ref: '#/components/schemas/CreditorType' }
+        inn: { type: string, nullable: true }
+        claimBasis: { type: string, nullable: true }
+        currency: { type: string }
+        totalAmount: { type: number, format: double }
+        principalAmount: { type: number, format: double, nullable: true }
+        interestAmount: { type: number, format: double, nullable: true }
+        penaltyAmount: { type: number, format: double, nullable: true }
+        overdue: { type: boolean }
+        secured: { type: boolean }
+        duplicateWarning:
+          type: boolean
+          description: True when another creditor in the case looks like a duplicate (non-blocking).
+      required: [creditorId, applicationId, name, type, currency, totalAmount, overdue, secured, duplicateWarning]
+
+    # ---- Estate: assets ----
+    AssetRequest:
+      type: object
+      properties:
+        type: { $ref: '#/components/schemas/AssetType' }
+        description: { type: string, maxLength: 500 }
+        currency:
+          type: string
+          maxLength: 3
+          nullable: true
+          description: ISO-4217 code; defaults to RUB when omitted.
+        estimatedValue: { type: number, format: double, minimum: 0 }
+        ownershipShare: { type: string, maxLength: 16, nullable: true }
+        registrationNumber: { type: string, maxLength: 100, nullable: true }
+        acquiredOn: { type: string, format: date, nullable: true }
+        pledged: { type: boolean, default: false }
+        pledgeCreditorId: { type: string, format: uuid, nullable: true }
+      required: [type, description, estimatedValue]
+    AssetResponse:
+      type: object
+      properties:
+        assetId: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/AssetType' }
+        description: { type: string }
+        currency: { type: string }
+        estimatedValue: { type: number, format: double }
+        ownershipShare: { type: string, nullable: true }
+        registrationNumber: { type: string, nullable: true }
+        acquiredOn: { type: string, format: date, nullable: true }
+        pledged: { type: boolean }
+        pledgeCreditorId: { type: string, format: uuid, nullable: true }
+        duplicateWarning:
+          type: boolean
+          description: True when another asset in the case looks like a duplicate (non-blocking).
+      required: [assetId, applicationId, type, description, currency, estimatedValue, pledged, duplicateWarning]

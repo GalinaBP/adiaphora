@@ -1,8 +1,12 @@
 import { request } from './client';
 import type {
   ApplicationResponse,
+  AssetRequest,
+  AssetResponse,
   CompletionResponse,
   CreateApplicationResponse,
+  CreditorRequest,
+  CreditorResponse,
   FormResponse,
   LoginRequest,
   MeResponse,
@@ -39,4 +43,35 @@ export const questionnaireApi = {
       method: 'PUT',
       body: { value },
     }),
+};
+
+export const creditorsApi = {
+  list: (applicationId: string) =>
+    request<CreditorResponse[]>(`/applications/${applicationId}/creditors`),
+  create: (applicationId: string, data: CreditorRequest) =>
+    request<CreditorResponse>(`/applications/${applicationId}/creditors`, {
+      method: 'POST',
+      body: data,
+    }),
+  update: (applicationId: string, creditorId: string, data: CreditorRequest) =>
+    request<CreditorResponse>(`/applications/${applicationId}/creditors/${creditorId}`, {
+      method: 'PUT',
+      body: data,
+    }),
+  remove: (applicationId: string, creditorId: string) =>
+    request<void>(`/applications/${applicationId}/creditors/${creditorId}`, { method: 'DELETE' }),
+};
+
+export const assetsApi = {
+  list: (applicationId: string) =>
+    request<AssetResponse[]>(`/applications/${applicationId}/assets`),
+  create: (applicationId: string, data: AssetRequest) =>
+    request<AssetResponse>(`/applications/${applicationId}/assets`, { method: 'POST', body: data }),
+  update: (applicationId: string, assetId: string, data: AssetRequest) =>
+    request<AssetResponse>(`/applications/${applicationId}/assets/${assetId}`, {
+      method: 'PUT',
+      body: data,
+    }),
+  remove: (applicationId: string, assetId: string) =>
+    request<void>(`/applications/${applicationId}/assets/${assetId}`, { method: 'DELETE' }),
 };

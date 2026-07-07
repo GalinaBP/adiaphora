@@ -129,3 +129,79 @@ export interface FormResponse {
   answers: Record<string, string>;
   completion: CompletionResponse;
 }
+
+// --- Estate: creditors ---
+export type CreditorType =
+  | 'BANK'
+  | 'MICROFINANCE'
+  | 'INDIVIDUAL'
+  | 'TAX_AUTHORITY'
+  | 'UTILITY'
+  | 'OTHER';
+
+export interface CreditorRequest {
+  name: string;
+  type: CreditorType;
+  inn?: string | null;
+  claimBasis?: string | null;
+  currency?: string | null;
+  totalAmount: number;
+  principalAmount?: number | null;
+  interestAmount?: number | null;
+  penaltyAmount?: number | null;
+  overdue?: boolean;
+  secured?: boolean;
+}
+export interface CreditorResponse {
+  creditorId: string;
+  applicationId: string;
+  name: string;
+  type: CreditorType;
+  inn: string | null;
+  claimBasis: string | null;
+  currency: string;
+  totalAmount: number;
+  principalAmount: number | null;
+  interestAmount: number | null;
+  penaltyAmount: number | null;
+  overdue: boolean;
+  secured: boolean;
+  duplicateWarning: boolean;
+}
+
+// --- Estate: assets ---
+export type AssetType =
+  | 'REAL_ESTATE'
+  | 'VEHICLE'
+  | 'BANK_ACCOUNT'
+  | 'SECURITIES'
+  | 'CASH'
+  | 'RECEIVABLE'
+  | 'MOVABLE_PROPERTY'
+  | 'OTHER';
+
+export interface AssetRequest {
+  type: AssetType;
+  description: string;
+  currency?: string | null;
+  estimatedValue: number;
+  ownershipShare?: string | null;
+  registrationNumber?: string | null;
+  acquiredOn?: string | null;
+  pledged?: boolean;
+  pledgeCreditorId?: string | null;
+}
+export interface AssetResponse {
+  assetId: string;
+  applicationId: string;
+  type: AssetType;
+  description: string;
+  currency: string;
+  estimatedValue: number;
+  ownershipShare: string | null;
+  registrationNumber: string | null;
+  acquiredOn: string | null;
+  pledged: boolean;
+  pledgeCreditorId: string | null;
+  duplicateWarning: boolean;
+}

@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import QuestionnairePage from './pages/QuestionnairePage';
+import EstatePage from './pages/EstatePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Route map for the skeleton. Public auth routes use AuthLayout; everything else is gated by
@@ -26,6 +27,7 @@ export default function App() {
             path="/applications/:applicationId/questionnaire"
             element={<QuestionnairePage />}
           />
+          <Route path="/applications/:applicationId/estate" element={<EstatePage />} />
         </Route>
       </Route>
 
