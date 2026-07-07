@@ -1,8 +1,11 @@
 spring:
   application:
     name: adiaphora-platform
-  profiles:
-    default: local
+  # No default profile on purpose. A profile MUST be selected explicitly (SPRING_PROFILES_ACTIVE):
+  # `prod` for real deployments, `local` for a developer machine. With no profile active there are no
+  # secret defaults (see the empty ${JWT_ACCESS_SECRET:} below), so the app fails fast instead of
+  # silently booting with committed development secrets and seeded accounts. The `spring-boot:run`
+  # dev command opts into `local` via the spring-boot-maven-plugin configuration in pom.xml.
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}

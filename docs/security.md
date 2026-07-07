@@ -56,3 +56,21 @@ in-memory/per-instance for now; a distributed version and per-IP throttling are 
 - Swagger and `/v3/api-docs` disabled.
 - Actuator exposes only `health` and `info`; environment/secrets are not exposed.
 - Seed data disabled.
+
+## Profile selection (fail closed)
+
+There is **no default Spring profile**. A profile must be selected explicitly via
+`SPRING_PROFILES_ACTIVE` — `prod` for real deployments, `local` for a developer machine. With no
+profile active there are no secret defaults, so the app fails fast at startup rather than silently
+booting with the committed development JWT secrets and seeded accounts. The `./mvnw spring-boot:run`
+dev command opts into `local` through the `spring-boot-maven-plugin` configuration; the built jar /
+container image does **not**, so forgetting to set the profile in production is a startup failure,
+not an insecure boot.
+
+## Correlation id is not trusted
+
+The inbound `X-Correlation-Id` header is attacker-controlled. `CorrelationIdFilter` accepts it only
+when it matches a strict pattern (`[A-Za-z0-9._-]`, length ≤ 64, kept in sync with the
+`audit_events.correlation_id` column); otherwise a fresh id is generated. This prevents log forging /
+response-header injection and stops an over-length id from failing the audit insert and rolling back
+the audited operation.
