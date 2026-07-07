@@ -1,11 +1,15 @@
 package ru.adiaphora.platform.application;
 
+import tools.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import ru.adiaphora.platform.support.AbstractIntegrationTest;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,6 +52,43 @@ class ApplicationApiIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v1/applications/" + applicationId)
                         .header(HttpHeaders.AUTHORIZATION, bearer(otherToken)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void listReturnsOnlyTheCallersOwnCases() throws Exception {
+        String ownerToken = authenticatedUser();
+        String ownId = createApplication(ownerToken);
+
+        String otherToken = authenticatedUser();
+        String otherId = createApplication(otherToken);
+
+        String body = mockMvc.perform(get("/api/v1/applications")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(ownerToken)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        Set<String> visibleIds = new HashSet<>();
+        for (JsonNode item : objectMapper.readTree(body).get("items")) {
+            visibleIds.add(item.get("applicationId").asText());
+        }
+        assertThat(visibleIds).contains(ownId).doesNotContain(otherId);
+    }
+
+    @Test
+    void invalidTransitionIsRejectedWithConflict() throws Exception {
+        String token = authenticatedUser();
+        String applicationId = createApplication(token);
+
+        // Cancel moves the case to a terminal state.
+        mockMvc.perform(post("/api/v1/applications/" + applicationId + "/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isNoContent());
+
+        // Submitting a cancelled case is not a permitted transition -> 409 INVALID_STATE.
+        mockMvc.perform(post("/api/v1/applications/" + applicationId + "/submit")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("INVALID_STATE"));
     }
 
     @Test

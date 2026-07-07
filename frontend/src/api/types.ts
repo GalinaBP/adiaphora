@@ -13,7 +13,8 @@ export type BankruptcyApplicationStatus =
   | 'UNDER_REVIEW'
   | 'APPROVED_FOR_DOCUMENT_GENERATION'
   | 'DOCUMENTS_READY'
-  | 'COMPLETED';
+  | 'COMPLETED'
+  | 'CANCELLED';
 
 export type BankruptcyRoute =
   | 'NOT_EVALUATED'

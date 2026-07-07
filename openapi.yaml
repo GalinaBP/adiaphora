@@ -643,6 +643,7 @@ components:
         - APPROVED_FOR_DOCUMENT_GENERATION
         - DOCUMENTS_READY
         - COMPLETED
+        - CANCELLED
     BankruptcyRoute:
       type: string
       enum:
