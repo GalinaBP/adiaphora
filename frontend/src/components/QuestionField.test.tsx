@@ -43,4 +43,9 @@ describe('QuestionField', () => {
     expect(screen.getByRole('option', { name: 'Yes' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'No' })).toBeInTheDocument();
   });
+
+  it('renders a date input for a DATE question', () => {
+    render(<QuestionField question={question({ type: 'DATE' })} value="" onCommit={vi.fn()} />);
+    expect(screen.getByLabelText(/Full name/)).toHaveAttribute('type', 'date');
+  });
 });

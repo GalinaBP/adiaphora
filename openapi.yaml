@@ -663,7 +663,7 @@ components:
         - REJECTED
     QuestionType:
       type: string
-      enum: [TEXT, TEXTAREA, INTEGER, MONEY, BOOLEAN, SINGLE_CHOICE, MULTIPLE_CHOICE]
+      enum: [TEXT, TEXTAREA, INTEGER, MONEY, BOOLEAN, SINGLE_CHOICE, MULTIPLE_CHOICE, DATE]
     RuleOutcome:
       type: string
       enum: [PASSED, FAILED, NOT_APPLICABLE, NEEDS_INFORMATION]

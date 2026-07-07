@@ -39,6 +39,17 @@ export default function QuestionField({ question, value, onCommit }: Props) {
             onBlur={() => onCommit(local)}
           />
         );
+      case 'DATE':
+        return (
+          <input
+            id={id}
+            type="date"
+            value={local}
+            required={question.required}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onCommit(local)}
+          />
+        );
       case 'BOOLEAN':
         return (
           <input

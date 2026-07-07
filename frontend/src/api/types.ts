@@ -30,7 +30,8 @@ export type QuestionType =
   | 'MONEY'
   | 'BOOLEAN'
   | 'SINGLE_CHOICE'
-  | 'MULTIPLE_CHOICE';
+  | 'MULTIPLE_CHOICE'
+  | 'DATE';
 
 export interface ApiFieldError {
   field: string;

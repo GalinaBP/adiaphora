@@ -74,10 +74,12 @@ class QuestionnaireApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.complete").value(true))
                 .andExpect(jsonPath("$.requiredAnswered").value(1));
 
+        // Resume: the saved answer is persisted and the response records which version was answered.
         mockMvc.perform(get("/api/v1/applications/" + applicationId + "/questionnaire")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.answers.totalDebtAmount").value("100000"));
+                .andExpect(jsonPath("$.answers.totalDebtAmount").value("100000"))
+                .andExpect(jsonPath("$.versionCode").value("test-v1"));
 
         mockMvc.perform(post("/api/v1/applications/" + applicationId + "/questionnaire/validate")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token)))
