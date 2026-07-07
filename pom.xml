@@ -189,6 +189,12 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                    <!-- There is no default Spring profile (see application.yml). `spring-boot:run`
+                         is a developer convenience, so it opts into `local` explicitly; the built
+                         artifact still fails fast unless a profile is selected at deploy time. -->
+                    <profiles>
+                        <profile>local</profile>
+                    </profiles>
                 </configuration>
             </plugin>
             <plugin>

@@ -14,6 +14,13 @@ public final class CorrelationId {
     public static final String HEADER = "X-Correlation-Id";
     public static final String MDC_KEY = "correlationId";
 
+    /**
+     * Maximum accepted length of a correlation id. Kept in sync with the
+     * {@code audit_events.correlation_id} column width so a persisted id can never overflow it and
+     * roll back the audited operation.
+     */
+    public static final int MAX_LENGTH = 64;
+
     private CorrelationId() {
     }
 
