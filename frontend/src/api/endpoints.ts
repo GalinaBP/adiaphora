@@ -14,6 +14,7 @@ import type {
   RegisterRequest,
   RegisterResponse,
   TokenResponse,
+  ValidationResponse,
 } from './types';
 
 // Thin, typed wrappers over the backend endpoints. No business logic — each function maps 1:1
@@ -42,6 +43,10 @@ export const questionnaireApi = {
     request<CompletionResponse>(`/applications/${applicationId}/answers/${questionCode}`, {
       method: 'PUT',
       body: { value },
+    }),
+  validate: (applicationId: string) =>
+    request<ValidationResponse>(`/applications/${applicationId}/questionnaire/validate`, {
+      method: 'POST',
     }),
 };
 
