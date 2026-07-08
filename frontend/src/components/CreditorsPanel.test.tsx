@@ -50,11 +50,11 @@ describe('CreditorsPanel', () => {
     api.create.mockResolvedValue(creditor({ name: 'Tinkoff' }));
 
     render(<CreditorsPanel applicationId="app1" />);
-    await screen.findByText(/No creditors yet/i);
+    await screen.findByText(/Кредиторы пока не добавлены/i);
 
-    await userEvent.type(screen.getByLabelText('Creditor name'), 'Tinkoff');
-    await userEvent.type(screen.getByLabelText('Total amount'), '50000');
-    await userEvent.click(screen.getByRole('button', { name: 'Add creditor' }));
+    await userEvent.type(screen.getByLabelText('Название кредитора'), 'Tinkoff');
+    await userEvent.type(screen.getByLabelText('Общая сумма'), '50000');
+    await userEvent.click(screen.getByRole('button', { name: 'Добавить кредитора' }));
 
     await waitFor(() =>
       expect(api.create).toHaveBeenCalledWith('app1', expect.objectContaining({
@@ -70,13 +70,13 @@ describe('CreditorsPanel', () => {
     api.create.mockResolvedValue(creditor({ duplicateWarning: true }));
 
     render(<CreditorsPanel applicationId="app1" />);
-    await screen.findByText(/No creditors yet/i);
+    await screen.findByText(/Кредиторы пока не добавлены/i);
 
-    await userEvent.type(screen.getByLabelText('Creditor name'), 'Sberbank');
-    await userEvent.type(screen.getByLabelText('Total amount'), '100000');
-    await userEvent.click(screen.getByRole('button', { name: 'Add creditor' }));
+    await userEvent.type(screen.getByLabelText('Название кредитора'), 'Sberbank');
+    await userEvent.type(screen.getByLabelText('Общая сумма'), '100000');
+    await userEvent.click(screen.getByRole('button', { name: 'Добавить кредитора' }));
 
-    expect(await screen.findByText(/similar creditor already exists/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Похожий кредитор уже есть/i)).toBeInTheDocument();
   });
 
   it('deletes a creditor', async () => {
@@ -85,7 +85,7 @@ describe('CreditorsPanel', () => {
 
     render(<CreditorsPanel applicationId="app1" />);
     await screen.findByText('Sberbank');
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Удалить' }));
 
     await waitFor(() => expect(api.remove).toHaveBeenCalledWith('app1', 'c1'));
   });

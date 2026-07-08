@@ -20,18 +20,18 @@ export default function LoginPage() {
       await login({ email, password });
       navigate('/applications');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Sign in failed');
+      setError(err instanceof ApiError ? err.message : 'Не удалось войти');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form className="form" onSubmit={onSubmit} aria-label="Sign in">
-      <h2>Sign in</h2>
+    <form className="form" onSubmit={onSubmit} aria-label="Вход">
+      <h2>Вход</h2>
       {error && <p className="error" role="alert">{error}</p>}
       <label>
-        Email
+        Электронная почта
         <input
           type="email"
           value={email}
@@ -41,7 +41,7 @@ export default function LoginPage() {
         />
       </label>
       <label>
-        Password
+        Пароль
         <input
           type="password"
           value={password}
@@ -51,7 +51,7 @@ export default function LoginPage() {
         />
       </label>
       <button type="submit" disabled={submitting}>
-        {submitting ? 'Signing in…' : 'Sign in'}
+        {submitting ? 'Входим…' : 'Войти'}
       </button>
     </form>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { applicationsApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
 import type { ApplicationResponse } from '../api/types';
+import { routeRu, statusRu } from '../i18n/labels';
 
 // Displays the list of cases and lets the user open one or start a new one.
 // Presentation only — status/route are shown verbatim as the backend returns them.
@@ -21,7 +22,7 @@ export default function ApplicationsPage() {
         if (active) setApplications(page.items);
       })
       .catch((err) => {
-        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load cases');
+        if (active) setError(err instanceof ApiError ? err.message : 'Не удалось загрузить дела');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -38,7 +39,7 @@ export default function ApplicationsPage() {
       const created = await applicationsApi.create();
       navigate(`/applications/${created.applicationId}/questionnaire`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to create case');
+      setError(err instanceof ApiError ? err.message : 'Не удалось создать дело');
       setCreating(false);
     }
   };
@@ -46,24 +47,24 @@ export default function ApplicationsPage() {
   return (
     <section>
       <div className="page-head">
-        <h2>Your cases</h2>
+        <h2>Ваши дела</h2>
         <button type="button" onClick={createCase} disabled={creating}>
-          {creating ? 'Creating…' : 'New case'}
+          {creating ? 'Создаём…' : 'Новое дело'}
         </button>
       </div>
 
       {error && <p className="error" role="alert">{error}</p>}
       {loading ? (
-        <p className="muted">Loading cases…</p>
+        <p className="muted">Загрузка дел…</p>
       ) : applications.length === 0 ? (
-        <p className="muted">No cases yet. Start one to begin the questionnaire.</p>
+        <p className="muted">Дел пока нет. Создайте новое, чтобы начать анкету.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Case</th>
-              <th>Status</th>
-              <th>Route</th>
+              <th>Дело</th>
+              <th>Статус</th>
+              <th>Маршрут</th>
               <th />
             </tr>
           </thead>
@@ -71,20 +72,20 @@ export default function ApplicationsPage() {
             {applications.map((app) => (
               <tr key={app.applicationId}>
                 <td className="mono">{app.applicationId.slice(0, 8)}</td>
-                <td>{app.status}</td>
-                <td>{app.route}</td>
+                <td>{statusRu(app.status)}</td>
+                <td>{routeRu(app.route)}</td>
                 <td>
                   <button
                     type="button"
                     onClick={() => navigate(`/applications/${app.applicationId}/questionnaire`)}
                   >
-                    Open
+                    Открыть
                   </button>{' '}
                   <button
                     type="button"
                     onClick={() => navigate(`/applications/${app.applicationId}/estate`)}
                   >
-                    Estate
+                    Имущество
                   </button>
                 </td>
               </tr>

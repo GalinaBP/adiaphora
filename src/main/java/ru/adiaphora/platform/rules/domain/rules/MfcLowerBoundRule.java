@@ -31,7 +31,7 @@ public class MfcLowerBoundRule implements BankruptcyRule {
         if (debt.compareTo(RuleInputs.MFC_LOWER_BOUND) < 0) {
             return new RuleEvaluation(code(), RuleOutcome.FAILED, RuleSeverity.INFO,
                     "debt " + debt + " below MFC lower bound " + RuleInputs.MFC_LOWER_BOUND,
-                    "Your debt is below the out-of-court (MFC) minimum threshold.", false);
+                    "Сумма долга ниже минимального порога внесудебного банкротства (МФЦ).", false);
         }
         return new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                 "debt at or above MFC lower bound", null, false);

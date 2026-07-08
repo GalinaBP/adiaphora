@@ -56,7 +56,7 @@ async function renderOpenReview(role: UserRole, item = review()) {
       <ReviewsPage />
     </MemoryRouter>,
   );
-  await userEvent.click(await screen.findByRole('button', { name: 'Open' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Открыть' }));
 }
 
 describe('ReviewsPage', () => {
@@ -75,41 +75,41 @@ describe('ReviewsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('ASSIGNED')).toBeInTheDocument();
-    expect(screen.getByText('MANUAL_REVIEW')).toBeInTheDocument();
+    expect(await screen.findByText('Назначена')).toBeInTheDocument();
+    expect(screen.getByText('Нужна проверка юристом')).toBeInTheDocument();
   });
 
   it('blocks an approve with route override until a reason is given, then submits', async () => {
     await renderOpenReview('LAWYER');
 
     await userEvent.selectOptions(
-      screen.getByLabelText('Confirmed route'),
+      screen.getByLabelText('Подтверждённый маршрут'),
       'MFC_PRELIMINARY',
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Одобрить' }));
 
     expect(
-      await screen.findByText(/Overriding the recommended route requires a reason/i),
+      await screen.findByText(/Для изменения маршрута требуется причина/i),
     ).toBeInTheDocument();
     expect(approveMock).not.toHaveBeenCalled();
 
     approveMock.mockResolvedValue(review({ status: 'APPROVED', route: 'MFC_PRELIMINARY' }));
-    await userEvent.type(screen.getByLabelText('Reason'), 'Debt is within MFC bounds after check');
-    await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    await userEvent.type(screen.getByLabelText('Причина'), 'Debt is within MFC bounds after check');
+    await userEvent.click(screen.getByRole('button', { name: 'Одобрить' }));
 
     expect(approveMock).toHaveBeenCalledWith(
       '11111111-2222-3333-4444-555555555555',
       'MFC_PRELIMINARY',
       'Debt is within MFC bounds after check',
     );
-    expect(await screen.findByText('APPROVED')).toBeInTheDocument();
+    expect(await screen.findByText('Одобрена')).toBeInTheDocument();
   });
 
   it('approves without a reason when the route is kept', async () => {
     await renderOpenReview('LAWYER');
     approveMock.mockResolvedValue(review({ status: 'APPROVED' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Одобрить' }));
 
     expect(approveMock).toHaveBeenCalledWith('11111111-2222-3333-4444-555555555555', null, '');
   });
@@ -117,9 +117,9 @@ describe('ReviewsPage', () => {
   it('requires a reason to reject', async () => {
     await renderOpenReview('LAWYER');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Reject' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Отклонить' }));
 
-    expect(await screen.findByText(/Rejecting a review requires a reason/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Для отклонения требуется причина/i)).toBeInTheDocument();
     expect(rejectMock).not.toHaveBeenCalled();
   });
 
@@ -129,7 +129,7 @@ describe('ReviewsPage', () => {
       review({ status: 'ASSIGNED', assigneeId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' }),
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Assign to me' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Назначить себе' }));
 
     expect(assignMock).toHaveBeenCalledWith(
       '11111111-2222-3333-4444-555555555555',
@@ -140,18 +140,18 @@ describe('ReviewsPage', () => {
   it('hides all actions from auditors', async () => {
     await renderOpenReview('AUDITOR');
 
-    expect(await screen.findByText(/Read-only access/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Reject' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Assign/ })).not.toBeInTheDocument();
+    expect(await screen.findByText(/Доступ только для чтения/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Одобрить' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Отклонить' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Назнач/ })).not.toBeInTheDocument();
   });
 
   it('hides decision buttons from operators but allows information requests', async () => {
     await renderOpenReview('OPERATOR');
 
-    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Одобрить' })).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Request information' }),
+      screen.getByRole('button', { name: 'Запросить информацию' }),
     ).toBeInTheDocument();
   });
 
@@ -165,6 +165,6 @@ describe('ReviewsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to load reviews');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось загрузить проверки');
   });
 });

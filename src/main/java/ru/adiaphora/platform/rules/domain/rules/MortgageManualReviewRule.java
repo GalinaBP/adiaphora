@@ -25,7 +25,7 @@ public class MortgageManualReviewRule implements BankruptcyRule {
         return context.bool(RuleInputs.OWNS_MORTGAGED_HOME)
                 .map(owns -> owns
                         ? new RuleEvaluation(code(), RuleOutcome.FAILED, RuleSeverity.MANUAL_REVIEW,
-                        "owns mortgaged home", "A mortgaged home requires manual legal review.", true)
+                        "owns mortgaged home", "Ипотечное жильё требует проверки юристом.", true)
                         : new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                         "no mortgaged home", null, false))
                 .orElseGet(() -> new RuleEvaluation(code(), RuleOutcome.NOT_APPLICABLE, RuleSeverity.INFO,

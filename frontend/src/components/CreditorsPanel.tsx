@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { creditorsApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
 import type { CreditorResponse, CreditorType } from '../api/types';
+import { creditorTypeRu } from '../i18n/labels';
 
 const TYPES: CreditorType[] = ['BANK', 'MICROFINANCE', 'INDIVIDUAL', 'TAX_AUTHORITY', 'UTILITY', 'OTHER'];
 
@@ -26,7 +27,7 @@ export default function CreditorsPanel({ applicationId }: { applicationId: strin
     creditorsApi
       .list(applicationId)
       .then(setItems)
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load creditors'));
+      .catch((e) => setError(e instanceof ApiError ? e.message : 'Не удалось загрузить кредиторов'));
 
   useEffect(() => {
     load();
@@ -59,12 +60,12 @@ export default function CreditorsPanel({ applicationId }: { applicationId: strin
         ? await creditorsApi.update(applicationId, editingId, body)
         : await creditorsApi.create(applicationId, body);
       if (saved.duplicateWarning) {
-        setWarning('A similar creditor already exists in this case.');
+        setWarning('Похожий кредитор уже есть в этом деле.');
       }
       reset();
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save creditor');
+      setError(err instanceof ApiError ? err.message : 'Не удалось сохранить кредитора');
     }
   };
 
@@ -74,25 +75,25 @@ export default function CreditorsPanel({ applicationId }: { applicationId: strin
       await creditorsApi.remove(applicationId, id);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete creditor');
+      setError(err instanceof ApiError ? err.message : 'Не удалось удалить кредитора');
     }
   };
 
   return (
     <section className="panel">
-      <h3>Creditors</h3>
+      <h3>Кредиторы</h3>
       {error && <p className="error" role="alert">{error}</p>}
       {warning && <p className="warning" role="status">{warning}</p>}
 
       {items.length === 0 ? (
-        <p className="muted">No creditors yet.</p>
+        <p className="muted">Кредиторы пока не добавлены.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Total</th>
+              <th>Название</th>
+              <th>Тип</th>
+              <th>Сумма</th>
               <th />
             </tr>
           </thead>
@@ -100,11 +101,11 @@ export default function CreditorsPanel({ applicationId }: { applicationId: strin
             {items.map((c) => (
               <tr key={c.creditorId}>
                 <td>{c.name}</td>
-                <td>{c.type}</td>
+                <td>{creditorTypeRu(c.type)}</td>
                 <td>{c.totalAmount} {c.currency}</td>
                 <td>
-                  <button type="button" onClick={() => startEdit(c)}>Edit</button>{' '}
-                  <button type="button" onClick={() => remove(c.creditorId)}>Delete</button>
+                  <button type="button" onClick={() => startEdit(c)}>Изменить</button>{' '}
+                  <button type="button" onClick={() => remove(c.creditorId)}>Удалить</button>
                 </td>
               </tr>
             ))}
@@ -112,41 +113,41 @@ export default function CreditorsPanel({ applicationId }: { applicationId: strin
         </table>
       )}
 
-      <form className="inline-form" onSubmit={submit} aria-label="Creditor form">
+      <form className="inline-form" onSubmit={submit} aria-label="Форма кредитора">
         <input
-          aria-label="Creditor name"
-          placeholder="Name"
+          aria-label="Название кредитора"
+          placeholder="Название"
           value={draft.name}
           required
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
         />
         <select
-          aria-label="Creditor type"
+          aria-label="Тип кредитора"
           value={draft.type}
           onChange={(e) => setDraft({ ...draft, type: e.target.value as CreditorType })}
         >
           {TYPES.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>{creditorTypeRu(t)}</option>
           ))}
         </select>
         <input
-          aria-label="Creditor INN"
-          placeholder="INN (optional)"
+          aria-label="ИНН кредитора"
+          placeholder="ИНН (необязательно)"
           value={draft.inn}
           onChange={(e) => setDraft({ ...draft, inn: e.target.value })}
         />
         <input
-          aria-label="Total amount"
+          aria-label="Общая сумма"
           type="number"
-          placeholder="Total amount"
+          placeholder="Общая сумма"
           value={draft.totalAmount}
           required
           min="0"
           onChange={(e) => setDraft({ ...draft, totalAmount: e.target.value })}
         />
-        <button type="submit">{editingId ? 'Save' : 'Add creditor'}</button>
+        <button type="submit">{editingId ? 'Сохранить' : 'Добавить кредитора'}</button>
         {editingId && (
-          <button type="button" onClick={reset}>Cancel</button>
+          <button type="button" onClick={reset}>Отмена</button>
         )}
       </form>
     </section>

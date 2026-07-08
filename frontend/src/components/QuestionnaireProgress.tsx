@@ -24,10 +24,10 @@ export default function QuestionnaireProgress({
     <div className="qn-progress">
       <div className="qn-progress-head">
         <span className="muted">
-          Section {currentIndex + 1} of {sections.length}
+          Раздел {currentIndex + 1} из {sections.length}
         </span>
         <span className="muted" data-testid="required-progress">
-          {requiredAnswered}/{requiredTotal} required answered
+          {requiredAnswered}/{requiredTotal} обязательных отвечено
         </span>
       </div>
 
@@ -35,7 +35,7 @@ export default function QuestionnaireProgress({
         className="qn-bar"
         max={100}
         value={pct}
-        aria-label="Required answers completed"
+        aria-label="Заполнение обязательных ответов"
       />
 
       <ol className="qn-steps">

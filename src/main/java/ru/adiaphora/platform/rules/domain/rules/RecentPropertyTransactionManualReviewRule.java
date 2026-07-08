@@ -30,7 +30,7 @@ public class RecentPropertyTransactionManualReviewRule implements BankruptcyRule
                 .map(value -> FLAGGED.contains(value)
                         ? new RuleEvaluation(code(), RuleOutcome.FAILED, RuleSeverity.MANUAL_REVIEW,
                         "recent property transaction: " + value,
-                        "A recent property transaction requires manual legal review.", true)
+                        "Недавняя сделка с имуществом требует проверки юристом.", true)
                         : new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                         "no flagged property transaction", null, false))
                 .orElseGet(() -> new RuleEvaluation(code(), RuleOutcome.NOT_APPLICABLE, RuleSeverity.INFO,

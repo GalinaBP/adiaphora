@@ -42,13 +42,13 @@ class EligibilityController {
     }
 
     record EstimateRequest(
-            @DecimalMin(value = "0", message = "must not be negative")
-            @Digits(integer = 17, fraction = 2, message = "must be an amount with up to 2 decimals")
+            @DecimalMin(value = "0", message = "не может быть отрицательной")
+            @Digits(integer = 17, fraction = 2, message = "сумма может иметь не более 2 знаков после запятой")
             BigDecimal totalDebtAmount,
             Boolean hasRegularIncome,
             Boolean ownsMortgagedHome,
             Boolean previousBankruptcy,
-            @Pattern(regexp = "none|sold|gifted", message = "must be one of: none, sold, gifted")
+            @Pattern(regexp = "none|sold|gifted", message = "допустимые значения: none, sold, gifted")
             String recentPropertyTransaction) {
 
         Map<String, String> toAnswers() {

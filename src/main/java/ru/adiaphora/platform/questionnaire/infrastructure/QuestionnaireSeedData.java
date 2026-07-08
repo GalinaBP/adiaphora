@@ -45,44 +45,44 @@ class QuestionnaireSeedData implements ApplicationRunner {
         }
         UUID versionId = UUID.randomUUID();
         versions.save(new QuestionnaireVersionEntity(versionId, "v1",
-                "Preliminary bankruptcy questionnaire (v1) — PLACEHOLDER, pending legal review",
+                "Предварительная анкета о банкротстве (v1) — ЧЕРНОВИК, ожидает проверки юристом",
                 VersionStatus.ACTIVE));
 
         sections.saveAll(List.of(
-                new QuestionSectionEntity(UUID.randomUUID(), versionId, "debts", "Debts", 1),
-                new QuestionSectionEntity(UUID.randomUUID(), versionId, "assets", "Assets & property", 2),
-                new QuestionSectionEntity(UUID.randomUUID(), versionId, "personal", "Personal", 3)));
+                new QuestionSectionEntity(UUID.randomUUID(), versionId, "debts", "Долги", 1),
+                new QuestionSectionEntity(UUID.randomUUID(), versionId, "assets", "Имущество", 2),
+                new QuestionSectionEntity(UUID.randomUUID(), versionId, "personal", "Личные данные", 3)));
 
         List<QuestionDefinitionEntity> defs = new ArrayList<>();
         defs.add(question(versionId, "debts", "totalDebtAmount", QuestionType.MONEY,
-                "Total amount of debts (RUB)", true, 1));
+                "Общая сумма долгов (₽)", true, 1));
         defs.add(question(versionId, "debts", "hasRegularIncome", QuestionType.BOOLEAN,
-                "Do you have a regular income?", true, 2));
+                "Есть ли у вас регулярный доход?", true, 2));
         defs.add(question(versionId, "debts", "monthlyIncome", QuestionType.MONEY,
-                "Approximate monthly income (RUB)", false, 3));
+                "Примерный ежемесячный доход (₽)", false, 3));
         defs.add(question(versionId, "assets", "ownsMortgagedHome", QuestionType.BOOLEAN,
-                "Do you own a home under mortgage?", true, 4));
+                "Есть ли у вас жильё в ипотеке?", true, 4));
         defs.add(question(versionId, "assets", "previousBankruptcy", QuestionType.BOOLEAN,
-                "Have you been declared bankrupt before?", true, 5));
+                "Признавались ли вы банкротом ранее?", true, 5));
 
         QuestionDefinitionEntity propertyTx = question(versionId, "assets", "recentPropertyTransaction",
-                QuestionType.SINGLE_CHOICE, "Property transactions in the last 3 years", true, 6);
+                QuestionType.SINGLE_CHOICE, "Сделки с имуществом за последние 3 года", true, 6);
         defs.add(propertyTx);
         defs.add(question(versionId, "personal", "employmentStatus", QuestionType.SINGLE_CHOICE,
-                "Current employment status", false, 7));
+                "Текущая занятость", false, 7));
 
         questions.saveAll(defs);
 
         options.saveAll(List.of(
-                new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "none", "None", 1),
-                new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "sold", "Sold property", 2),
-                new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "gifted", "Gifted property", 3)));
+                new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "none", "Нет", 1),
+                new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "sold", "Продавал(а) имущество", 2),
+                new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "gifted", "Дарил(а) имущество", 3)));
 
         UUID employmentId = defs.get(defs.size() - 1).getId();
         options.saveAll(List.of(
-                new QuestionOptionEntity(UUID.randomUUID(), employmentId, "employed", "Employed", 1),
-                new QuestionOptionEntity(UUID.randomUUID(), employmentId, "unemployed", "Unemployed", 2),
-                new QuestionOptionEntity(UUID.randomUUID(), employmentId, "self_employed", "Self-employed", 3)));
+                new QuestionOptionEntity(UUID.randomUUID(), employmentId, "employed", "Работаю по найму", 1),
+                new QuestionOptionEntity(UUID.randomUUID(), employmentId, "unemployed", "Не работаю", 2),
+                new QuestionOptionEntity(UUID.randomUUID(), employmentId, "self_employed", "Самозанятый / ИП", 3)));
 
         log.info("Seeded placeholder questionnaire version 'v1' with {} questions", defs.size());
     }

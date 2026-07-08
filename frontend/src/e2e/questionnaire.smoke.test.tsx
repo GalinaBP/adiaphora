@@ -124,18 +124,18 @@ describe('questionnaire flow (smoke)', () => {
     await userEvent.type(nameField, 'Ivan Petrov');
     await userEvent.tab();
     await waitFor(() =>
-      expect(screen.getByTestId('required-progress')).toHaveTextContent('1/2 required answered'),
+      expect(screen.getByTestId('required-progress')).toHaveTextContent('1/2 обязательных отвечено'),
     );
 
     // Step 2: navigate and answer the choice question (commits on change).
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Далее' }));
     await userEvent.selectOptions(screen.getByLabelText(/Do you have debts/), 'YES');
     await waitFor(() =>
-      expect(screen.getByTestId('required-progress')).toHaveTextContent('2/2 required answered'),
+      expect(screen.getByTestId('required-progress')).toHaveTextContent('2/2 обязательных отвечено'),
     );
 
     // Validate the whole questionnaire from the last step.
-    await userEvent.click(screen.getByRole('button', { name: 'Check answers' }));
-    expect(await screen.findByText(/ready to submit/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Проверить ответы' }));
+    expect(await screen.findByText(/готово к подаче/i)).toBeInTheDocument();
   });
 });

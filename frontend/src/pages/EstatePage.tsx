@@ -11,8 +11,8 @@ export default function EstatePage() {
   return (
     <section>
       <div className="page-head">
-        <h2>Creditors &amp; assets</h2>
-        <Link to={`/applications/${applicationId}/questionnaire`}>Back to questionnaire</Link>
+        <h2>Кредиторы и имущество</h2>
+        <Link to={`/applications/${applicationId}/questionnaire`}>К анкете</Link>
       </div>
       <CreditorsPanel applicationId={applicationId} />
       <AssetsPanel applicationId={applicationId} />

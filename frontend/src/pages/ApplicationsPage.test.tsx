@@ -41,9 +41,9 @@ describe('ApplicationsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('DRAFT')).toBeInTheDocument();
-    expect(screen.getByText('NOT_EVALUATED')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'New case' })).toBeInTheDocument();
+    expect(await screen.findByText('Черновик')).toBeInTheDocument();
+    expect(screen.getByText('Не оценено')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Новое дело' })).toBeInTheDocument();
   });
 
   it('shows an empty state when there are no cases', async () => {
@@ -55,6 +55,6 @@ describe('ApplicationsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText(/No cases yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Дел пока нет/i)).toBeInTheDocument();
   });
 });

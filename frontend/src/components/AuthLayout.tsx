@@ -13,16 +13,16 @@ export default function AuthLayout() {
         <h1 className="brand">
           <Link to="/">Adiaphora</Link>
         </h1>
-        <p className="muted">Personal bankruptcy document platform</p>
+        <p className="muted">Подготовка документов для банкротства физических лиц</p>
         <Outlet />
         <nav className="auth-switch">
           {onLogin ? (
             <span>
-              No account? <Link to="/register">Register</Link>
+              Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
             </span>
           ) : (
             <span>
-              Have an account? <Link to="/login">Sign in</Link>
+              Уже есть аккаунт? <Link to="/login">Войти</Link>
             </span>
           )}
         </nav>

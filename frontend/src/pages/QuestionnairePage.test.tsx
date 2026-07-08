@@ -86,8 +86,8 @@ describe('QuestionnairePage', () => {
     renderPage();
 
     expect(await screen.findByLabelText(/Full name/)).toBeInTheDocument();
-    expect(screen.getByText('Section 1 of 2')).toBeInTheDocument();
-    expect(screen.getByTestId('required-progress')).toHaveTextContent('0/2 required answered');
+    expect(screen.getByText('Раздел 1 из 2')).toBeInTheDocument();
+    expect(screen.getByTestId('required-progress')).toHaveTextContent('0/2 обязательных отвечено');
     // The second section's question is not rendered until we navigate to it.
     expect(screen.queryByLabelText(/Do you have debts/)).not.toBeInTheDocument();
   });
@@ -97,11 +97,11 @@ describe('QuestionnairePage', () => {
     renderPage();
     await screen.findByLabelText(/Full name/);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Далее' }));
     expect(screen.getByLabelText(/Do you have debts/)).toBeInTheDocument();
-    expect(screen.getByText('Section 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Раздел 2 из 2')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Назад' }));
     expect(screen.getByLabelText(/Full name/)).toBeInTheDocument();
   });
 
@@ -117,8 +117,8 @@ describe('QuestionnairePage', () => {
     await waitFor(() =>
       expect(saveMock).toHaveBeenCalledWith('app-1', 'full_name', 'Ivan Petrov'),
     );
-    expect(await screen.findByText('All changes saved')).toBeInTheDocument();
-    expect(screen.getByTestId('required-progress')).toHaveTextContent('1/2 required answered');
+    expect(await screen.findByText('Все изменения сохранены')).toBeInTheDocument();
+    expect(screen.getByTestId('required-progress')).toHaveTextContent('1/2 обязательных отвечено');
   });
 
   it('surfaces a per-field validation error returned by save', async () => {
@@ -158,8 +158,8 @@ describe('QuestionnairePage', () => {
     expect(input).toHaveValue('Anna Petrova');
 
     // Navigating away and back still shows the locally kept value.
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Далее' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Назад' }));
     expect(screen.getByLabelText(/Full name/)).toHaveValue('Anna Petrova');
   });
 
@@ -173,14 +173,14 @@ describe('QuestionnairePage', () => {
     renderPage();
     await screen.findByLabelText(/Full name/);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Check answers' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Далее' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Проверить ответы' }));
 
-    expect(await screen.findByText(/still need answers/i)).toBeInTheDocument();
+    expect(await screen.findByText(/вопросы без ответа/i)).toBeInTheDocument();
     // The missing question is listed by its label and jumps back to its section when clicked.
     await userEvent.click(screen.getByRole('button', { name: 'Full name' }));
     expect(screen.getByLabelText(/Full name/)).toBeInTheDocument();
-    expect(screen.getByText('Section 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Раздел 1 из 2')).toBeInTheDocument();
   });
 
   it('shows a load error when the questionnaire cannot be fetched', async () => {

@@ -7,7 +7,7 @@ export default function ProtectedRoute() {
   const { initializing } = useAuth();
 
   if (initializing) {
-    return <div className="page-loading">Loading…</div>;
+    return <div className="page-loading">Загрузка…</div>;
   }
   if (!tokenStore.get()) {
     return <Navigate to="/login" replace />;

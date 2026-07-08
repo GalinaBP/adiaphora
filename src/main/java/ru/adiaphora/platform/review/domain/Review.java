@@ -64,7 +64,7 @@ public class Review {
     }
 
     public void requestInformation(String reason) {
-        requireReason(reason, "Requesting information requires a reason");
+        requireReason(reason, "Для запроса информации требуется причина");
         if (!DECIDABLE.contains(status) && status != ReviewStatus.ASSIGNED) {
             throw new InvalidApplicationStateException(
                     "Cannot request information for a review in status " + status);
@@ -80,7 +80,7 @@ public class Review {
     public void approve(UUID reviewerId, BankruptcyRoute newRoute, String reason, Instant at) {
         ensureDecidable();
         if (newRoute != null && newRoute != route) {
-            requireReason(reason, "Overriding the route requires a reason");
+            requireReason(reason, "Для изменения маршрута требуется причина");
             newOverrides.add(new RouteOverride(route, newRoute, reason, reviewerId, at, rulesetVersion));
             this.route = newRoute;
         }
@@ -90,7 +90,7 @@ public class Review {
 
     public void reject(UUID reviewerId, String reason, Instant at) {
         ensureDecidable();
-        requireReason(reason, "Rejecting a review requires a reason");
+        requireReason(reason, "Для отклонения требуется причина");
         this.lastDecisionReason = reason;
         this.status = ReviewStatus.REJECTED;
     }

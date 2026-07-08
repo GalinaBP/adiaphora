@@ -9,7 +9,7 @@ export default function RoleRoute({ roles }: { roles: UserRole[] }) {
   const { user, initializing } = useAuth();
 
   if (initializing) {
-    return <div className="page-loading">Loading…</div>;
+    return <div className="page-loading">Загрузка…</div>;
   }
   if (!user || !roles.includes(user.role)) {
     return <Navigate to="/applications" replace />;
