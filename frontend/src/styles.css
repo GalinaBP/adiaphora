@@ -405,3 +405,39 @@ button.link {
 .warning {
   color: #fcd34d;
 }
+
+/* --- Manual reviews (staff screen) --- */
+.review-detail {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+}
+
+.review-detail h3 {
+  margin-top: 0;
+}
+
+.review-action {
+  margin-top: 1rem;
+}
+
+.review-action h4 {
+  margin: 0 0 0.5rem;
+}
+
+.review-action textarea {
+  display: block;
+  width: 100%;
+  min-height: 4rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.review-action select {
+  display: block;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.review-buttons {
+  margin-top: 0.5rem;
+}
