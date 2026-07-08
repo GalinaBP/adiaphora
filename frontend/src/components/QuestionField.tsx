@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { QuestionResponse } from '../api/types';
 
 interface Props {
@@ -15,15 +15,18 @@ interface Props {
 // authoritative validation is the backend's, surfaced here via the `error` prop.
 export default function QuestionField({ question, value, onCommit, error }: Props) {
   const [local, setLocal] = useState(value);
+  const [committed, setCommitted] = useState(value);
   const id = `q-${question.code}`;
   const errorId = `${id}-error`;
   const helpId = `${id}-help`;
 
   // Keep the control in sync when the saved value changes underneath us (resume / refetch),
   // without clobbering in-progress typing (the parent mirrors committed values back as `value`).
-  useEffect(() => {
+  // Adjusted during render (not in an effect) per the React derived-state guidance.
+  if (value !== committed) {
+    setCommitted(value);
     setLocal(value);
-  }, [value]);
+  }
 
   const describedBy =
     [error ? errorId : null, question.helpText ? helpId : null].filter(Boolean).join(' ') ||

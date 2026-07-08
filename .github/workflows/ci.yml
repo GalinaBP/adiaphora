@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build & test (JDK 21)
+  backend:
+    name: Backend — build, tests, migrations (JDK 21)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,7 +27,9 @@ jobs:
           cache: maven
 
       # GitHub-hosted ubuntu runners include Docker, so Testcontainers can start MySQL for the
-      # integration tests. No Colima/API-version workarounds are needed here.
+      # integration tests. Flyway applies the full migration set there (verified explicitly by
+      # FlywayMigrationIntegrationTest), and Hibernate's ddl-auto=validate fails the build on any
+      # entity/schema drift. No Colima/API-version workarounds are needed here.
       - name: Build and test
         run: ./mvnw -B verify
 
@@ -38,3 +40,35 @@ jobs:
           name: surefire-reports
           path: target/surefire-reports/
           if-no-files-found: ignore
+
+  frontend:
+    name: Frontend — typecheck, lint, tests, build (Node 22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and component tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
