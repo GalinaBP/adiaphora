@@ -1,10 +1,12 @@
 package ru.adiaphora.platform.application.application;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.adiaphora.platform.application.api.ApplicationView;
+import ru.adiaphora.platform.application.api.ApplicationViewedEvent;
 import ru.adiaphora.platform.application.domain.BankruptcyApplication;
 import ru.adiaphora.platform.application.domain.BankruptcyApplicationRepository;
 import ru.adiaphora.platform.application.domain.StatusChange;
@@ -13,6 +15,7 @@ import ru.adiaphora.platform.common.security.AuthenticatedUser;
 import ru.adiaphora.platform.common.security.CurrentUser;
 import ru.adiaphora.platform.common.web.PageResponse;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,17 +30,25 @@ public class ApplicationQueries {
     private final BankruptcyApplicationRepository repository;
     private final ApplicationAccessPolicy accessPolicy;
     private final CurrentUser currentUser;
+    private final ApplicationEventPublisher events;
+    private final Clock clock;
 
     public ApplicationQueries(BankruptcyApplicationRepository repository,
-                              ApplicationAccessPolicy accessPolicy, CurrentUser currentUser) {
+                              ApplicationAccessPolicy accessPolicy, CurrentUser currentUser,
+                              ApplicationEventPublisher events, Clock clock) {
         this.repository = repository;
         this.accessPolicy = accessPolicy;
         this.currentUser = currentUser;
+        this.events = events;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
     public ApplicationView getById(UUID applicationId) {
-        return ApplicationMapper.toView(loadAuthorized(applicationId));
+        ApplicationView view = ApplicationMapper.toView(loadAuthorized(applicationId));
+        events.publishEvent(new ApplicationViewedEvent(applicationId, currentUser.require().userId(),
+                clock.instant()));
+        return view;
     }
 
     @Transactional(readOnly = true)

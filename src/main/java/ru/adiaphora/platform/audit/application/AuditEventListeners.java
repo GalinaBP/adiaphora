@@ -6,12 +6,14 @@ import ru.adiaphora.platform.application.api.ApplicationCancelledEvent;
 import ru.adiaphora.platform.application.api.ApplicationCreatedEvent;
 import ru.adiaphora.platform.application.api.ApplicationStatusChangedEvent;
 import ru.adiaphora.platform.application.api.ApplicationSubmittedEvent;
+import ru.adiaphora.platform.application.api.ApplicationViewedEvent;
 import ru.adiaphora.platform.audit.domain.AuditAction;
 import ru.adiaphora.platform.audit.domain.AuditEvent;
 import ru.adiaphora.platform.audit.domain.AuditResult;
 import ru.adiaphora.platform.auth.api.UserLoginFailedEvent;
 import ru.adiaphora.platform.auth.api.UserLoginSucceededEvent;
 import ru.adiaphora.platform.auth.api.UserRegisteredEvent;
+import ru.adiaphora.platform.common.event.ResourceAccessDeniedEvent;
 import ru.adiaphora.platform.common.security.CurrentUser;
 import ru.adiaphora.platform.document.api.DocumentDownloadedEvent;
 import ru.adiaphora.platform.document.api.DocumentRequestedEvent;
@@ -19,6 +21,8 @@ import ru.adiaphora.platform.questionnaire.api.AnswerUpdatedEvent;
 import ru.adiaphora.platform.review.api.ReviewAssignedEvent;
 import ru.adiaphora.platform.review.api.ReviewDecisionRecordedEvent;
 import ru.adiaphora.platform.rules.api.RulesEvaluatedEvent;
+
+import java.util.UUID;
 
 /**
  * Translates domain events published by other modules into immutable audit records. This is the only
@@ -172,6 +176,33 @@ class AuditEventListeners {
                 .object("QuestionAnswer", null)
                 .applicationId(event.applicationId())
                 .metadata(metadata), event.occurredAt());
+    }
+
+    // --- access ---------------------------------------------------------------
+
+    @EventListener
+    void on(ApplicationViewedEvent event) {
+        recorder.record(AuditEvent.builder()
+                .actor(event.viewerId(), currentRole())
+                .action(AuditAction.APPLICATION_VIEWED)
+                .object("Application", event.applicationId())
+                .applicationId(event.applicationId()), event.occurredAt());
+    }
+
+    @EventListener
+    void on(ResourceAccessDeniedEvent event) {
+        // The denied principal (if authenticated) is resolved from the request context.
+        recorder.record(AuditEvent.builder()
+                .actor(currentUserId(), currentRole())
+                .action(AuditAction.ACCESS_DENIED)
+                .object("Resource", null)
+                .result(AuditResult.FAILURE)
+                .metadata("{\"path\":\"" + event.path() + "\"}"), event.occurredAt());
+    }
+
+    private UUID currentUserId() {
+        return currentUser.get().map(ru.adiaphora.platform.common.security.AuthenticatedUser::userId)
+                .orElse(null);
     }
 
     private String currentRole() {

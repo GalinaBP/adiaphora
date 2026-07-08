@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.adiaphora.platform.support.AbstractIntegrationTest;
+import ru.adiaphora.platform.support.QuestionnaireTestSeed;
 
 import java.util.List;
 import java.util.Map;
@@ -41,48 +42,9 @@ class RulesEvaluationPersistenceIntegrationTest extends AbstractIntegrationTest 
     @Autowired
     private JdbcTemplate jdbc;
 
-    // Reset and seed a questionnaire definition covering every question the rules read. Done in SQL
-    // because the questionnaire module's repositories are package-private (module boundary); this
-    // test's assertions read the same database directly anyway. Mirrors the reset-and-seed pattern of
-    // QuestionnaireApiIntegrationTest — integration tests share one singleton MySQL.
     @BeforeEach
     void seedRulesQuestionnaire() {
-        for (String table : new String[]{"question_answers", "questionnaire_responses",
-                "question_options", "question_definitions", "question_sections",
-                "questionnaire_versions"}) {
-            jdbc.update("DELETE FROM " + table);
-        }
-
-        String versionId = newId();
-        jdbc.update("INSERT INTO questionnaire_versions (id, code, label, status, created_at, updated_at) "
-                + "VALUES (UNHEX(?), 'rules-test-v1', 'Rules test questionnaire', 'ACTIVE', NOW(6), NOW(6))",
-                versionId);
-        jdbc.update("INSERT INTO question_sections (id, version_id, code, title, display_order) "
-                + "VALUES (UNHEX(?), UNHEX(?), 'debts', 'Debts', 1)", newId(), versionId);
-
-        insertQuestion(versionId, "totalDebtAmount", "MONEY", 1);
-        insertQuestion(versionId, "hasRegularIncome", "BOOLEAN", 2);
-        insertQuestion(versionId, "ownsMortgagedHome", "BOOLEAN", 3);
-        insertQuestion(versionId, "previousBankruptcy", "BOOLEAN", 4);
-        String choiceId = insertQuestion(versionId, "recentPropertyTransaction", "SINGLE_CHOICE", 5);
-        int order = 1;
-        for (String option : new String[]{"none", "sold", "gifted"}) {
-            jdbc.update("INSERT INTO question_options (id, question_definition_id, value, label, display_order) "
-                    + "VALUES (UNHEX(?), UNHEX(?), ?, ?, ?)", newId(), choiceId, option, option, order++);
-        }
-    }
-
-    private String insertQuestion(String versionId, String code, String type, int order) {
-        String id = newId();
-        jdbc.update("INSERT INTO question_definitions (id, version_id, section_code, code, type, label, "
-                + "help_text, required, display_order, validation_configuration) "
-                + "VALUES (UNHEX(?), UNHEX(?), 'debts', ?, ?, ?, NULL, 1, ?, NULL)",
-                id, versionId, code, type, code, order);
-        return id;
-    }
-
-    private static String newId() {
-        return hex(UUID.randomUUID().toString());
+        QuestionnaireTestSeed.seedRulesQuestionnaire(jdbc);
     }
 
     @Test
