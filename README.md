@@ -1,4 +1,4 @@
-cAI-003	Week 1	P0	Draft relational schema and Flyway migrations	Design users, roles, applications, answers, creditors, assets, transactions, rules, evaluations, reviews, documents and audit events.	V001–V00N migration scripts	Foreign keys and indexes exist; migrations run on empty DB; JPA validates	Developer and product owner review fields	Testcontainers migration test	AI-001	6.0	Not Started														# Adiaphora Bankruptcy Platform
+# Adiaphora Bankruptcy Platform
 
 [![CI](https://github.com/GalinaBP/adiaphora/actions/workflows/ci.yml/badge.svg)](https://github.com/GalinaBP/adiaphora/actions/workflows/ci.yml)
 
@@ -70,6 +70,26 @@ App only (against a MySQL you provide), local profile:
 ./mvnw spring-boot:run
 ```
 
+Once up: sign in at <http://localhost:3000> with a seed account (see
+[docs/local-development.md](docs/local-development.md)) — demo cases covering the rule-engine
+boundary scenarios are pre-seeded. Operational tasks (env vars, migrations, backups, common
+errors) are in the **[runbook](docs/runbook.md)**.
+
+## Frontend development
+
+The compose stack serves the built frontend on :3000. For frontend work with hot reload:
+
+```bash
+cd frontend
+npm ci
+npm run dev        # Vite dev server on http://localhost:5173 (already CORS-allowed)
+
+npm run typecheck  # tsc
+npm run lint       # eslint
+npm test           # vitest
+npm run build      # production build
+```
+
 ## Tests
 
 ```bash
@@ -138,6 +158,7 @@ flowchart LR
 
 ## Documentation
 
+- [docs/runbook.md](docs/runbook.md) — operations: env vars, migrations, backups, common errors
 - [docs/architecture.md](docs/architecture.md)
 - [docs/modules.md](docs/modules.md)
 - [docs/security.md](docs/security.md)
