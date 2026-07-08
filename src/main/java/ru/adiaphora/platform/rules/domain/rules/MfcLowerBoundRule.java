@@ -18,6 +18,11 @@ public class MfcLowerBoundRule implements BankruptcyRule {
     }
 
     @Override
+    public int order() {
+        return 30;
+    }
+
+    @Override
     public RuleEvaluation evaluate(RuleContext context) {
         BigDecimal debt = context.money(RuleInputs.TOTAL_DEBT_AMOUNT).orElse(null);
         if (debt == null) {

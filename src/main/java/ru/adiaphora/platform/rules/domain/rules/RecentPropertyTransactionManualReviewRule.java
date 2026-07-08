@@ -20,6 +20,11 @@ public class RecentPropertyTransactionManualReviewRule implements BankruptcyRule
     }
 
     @Override
+    public int order() {
+        return 70;
+    }
+
+    @Override
     public RuleEvaluation evaluate(RuleContext context) {
         return context.text(RuleInputs.RECENT_PROPERTY_TRANSACTION)
                 .map(value -> FLAGGED.contains(value)

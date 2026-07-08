@@ -16,6 +16,11 @@ public class PaymentAbilityMissingRule implements BankruptcyRule {
     }
 
     @Override
+    public int order() {
+        return 20;
+    }
+
+    @Override
     public RuleEvaluation evaluate(RuleContext context) {
         if (!context.isAnswered(RuleInputs.HAS_REGULAR_INCOME)) {
             return new RuleEvaluation(code(), RuleOutcome.NEEDS_INFORMATION, RuleSeverity.WARNING,
