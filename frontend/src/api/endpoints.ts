@@ -8,6 +8,8 @@ import type {
   CreateApplicationResponse,
   CreditorRequest,
   CreditorResponse,
+  EligibilityEstimateRequest,
+  EligibilityEstimateResponse,
   FormResponse,
   LoginRequest,
   MeResponse,
@@ -106,5 +108,14 @@ export const reviewsApi = {
     request<ReviewResponse>(`/reviews/${reviewId}/reject`, {
       method: 'POST',
       body: { reason },
+    }),
+};
+
+export const eligibilityApi = {
+  estimate: (data: EligibilityEstimateRequest) =>
+    request<EligibilityEstimateResponse>('/eligibility/estimate', {
+      method: 'POST',
+      body: data,
+      auth: false,
     }),
 };

@@ -340,6 +340,31 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  # ---------------------------------------------------------------- Eligibility (anonymous)
+  /api/v1/eligibility/estimate:
+    post:
+      tags: [Eligibility]
+      summary: Anonymous, non-binding MFC-eligibility estimate
+      description: >-
+        Public endpoint (no authentication). Runs the submitted answers through the same rule
+        engine as the authenticated evaluation but persists nothing — no application, evaluation
+        or audit record is created. All fields are optional; unanswered questions produce a
+        NEEDS_INFORMATION verdict. Estimates are preliminary and pending lawyer review of the
+        placeholder ruleset.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EligibilityEstimateRequest' }
+      responses:
+        '200':
+          description: Eligibility estimate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EligibilityEstimateResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
   # ---------------------------------------------------------------- Reviews
   /api/v1/reviews:
     get:
@@ -1061,6 +1086,37 @@ components:
         userMessage: { type: string, nullable: true }
         blocksAutomaticDecision: { type: boolean }
       required: [ruleCode, outcome, severity, blocksAutomaticDecision]
+    EligibilityEstimateRequest:
+      type: object
+      description: All fields optional; unanswered questions yield NEEDS_INFORMATION.
+      properties:
+        totalDebtAmount:
+          type: number
+          minimum: 0
+          description: Total debt in RUB, up to 2 decimals.
+        hasRegularIncome: { type: boolean }
+        ownsMortgagedHome: { type: boolean }
+        previousBankruptcy: { type: boolean }
+        recentPropertyTransaction:
+          type: string
+          enum: [none, sold, gifted]
+
+    EligibilityEstimateResponse:
+      type: object
+      properties:
+        verdict:
+          type: string
+          enum: [MFC_ELIGIBLE, AMOUNT_OUT_OF_RANGE, MANUAL_REVIEW, NEEDS_INFORMATION]
+        route: { $ref: '#/components/schemas/BankruptcyRoute' }
+        messages:
+          type: array
+          items: { type: string }
+        missingInformation:
+          type: array
+          items: { type: string }
+        rulesetVersion: { type: string }
+      required: [verdict, route, messages, missingInformation, rulesetVersion]
+
     RulesEvaluationResult:
       type: object
       properties:

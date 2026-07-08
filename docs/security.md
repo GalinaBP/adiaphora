@@ -11,6 +11,7 @@ ownership.
 | Pattern                     | Access                                   |
 |-----------------------------|------------------------------------------|
 | `/api/v1/auth/**`           | public                                   |
+| `POST /api/v1/eligibility/estimate` | public (anonymous estimate; persists nothing) |
 | `/actuator/health`, `/info` | public                                   |
 | `/swagger-ui/**`, `/v3/api-docs/**` | development profile only          |
 | `/api/v1/reviews/**`        | `OPERATOR`, `LAWYER`, `ADMIN`, `AUDITOR` |
