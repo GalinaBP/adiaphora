@@ -29,6 +29,9 @@ class RuleEvaluationEntity {
     @Column(name = "questionnaire_version", length = 64)
     private String questionnaireVersion;
 
+    @Column(name = "input_snapshot_hash", length = 64, updatable = false)
+    private String inputSnapshotHash;
+
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
 
@@ -49,12 +52,13 @@ class RuleEvaluationEntity {
     }
 
     RuleEvaluationEntity(UUID id, UUID applicationId, String rulesetVersion, String questionnaireVersion,
-                         Instant startedAt, Instant completedAt, BankruptcyRoute route,
-                         boolean manualReviewRequired, String missingInformation) {
+                         String inputSnapshotHash, Instant startedAt, Instant completedAt,
+                         BankruptcyRoute route, boolean manualReviewRequired, String missingInformation) {
         this.id = id;
         this.applicationId = applicationId;
         this.rulesetVersion = rulesetVersion;
         this.questionnaireVersion = questionnaireVersion;
+        this.inputSnapshotHash = inputSnapshotHash;
         this.startedAt = startedAt;
         this.completedAt = completedAt;
         this.route = route;
@@ -76,6 +80,10 @@ class RuleEvaluationEntity {
 
     String getQuestionnaireVersion() {
         return questionnaireVersion;
+    }
+
+    String getInputSnapshotHash() {
+        return inputSnapshotHash;
     }
 
     Instant getStartedAt() {

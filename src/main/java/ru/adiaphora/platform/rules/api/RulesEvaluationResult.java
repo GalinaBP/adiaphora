@@ -9,13 +9,15 @@ import java.util.UUID;
 /**
  * The public result of a rules evaluation: the preliminary route, whether manual review is required,
  * the triggered findings, and what information is still missing. {@code questionnaireVersion} is null
- * when no questionnaire answers exist yet.
+ * when no questionnaire answers exist yet. {@code inputSnapshotHash} identifies the exact answers the
+ * evaluation was computed from.
  */
 public record RulesEvaluationResult(
         UUID evaluationId,
         UUID applicationId,
         String rulesetVersion,
         String questionnaireVersion,
+        String inputSnapshotHash,
         BankruptcyRoute route,
         boolean manualReviewRequired,
         List<RuleFinding> triggeredRules,

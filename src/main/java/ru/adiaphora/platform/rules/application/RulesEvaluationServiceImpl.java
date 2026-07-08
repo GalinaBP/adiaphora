@@ -46,7 +46,7 @@ public class RulesEvaluationServiceImpl implements RulesEvaluationService {
         Instant completedAt = clock.instant();
 
         RuleEvaluationRecord record = repository.save(RuleEvaluationRecord.create(
-                applicationId, questionnaire.versionCode(), startedAt, completedAt, engineResult));
+                applicationId, questionnaire, startedAt, completedAt, engineResult));
 
         events.publishEvent(new RulesEvaluatedEvent(applicationId, record.rulesetVersion(),
                 record.route(), record.manualReviewRequired(), completedAt));
