@@ -19,6 +19,7 @@ export default function AppLayout() {
         </Link>
         <nav className="app-nav">
           <NavLink to="/applications">Cases</NavLink>
+          {user && user.role !== 'USER' && <NavLink to="/reviews">Reviews</NavLink>}
         </nav>
         <div className="app-user">
           {user && <span className="muted">{user.email}</span>}

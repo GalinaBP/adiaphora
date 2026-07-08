@@ -21,7 +21,8 @@ export type BankruptcyRoute =
   | 'MFC_PRELIMINARY'
   | 'COURT_PRELIMINARY'
   | 'MANUAL_REVIEW'
-  | 'INSUFFICIENT_INFORMATION';
+  | 'INSUFFICIENT_INFORMATION'
+  | 'NOT_CURRENTLY_RECOMMENDED';
 
 export type QuestionType =
   | 'TEXT'
@@ -209,4 +210,24 @@ export interface AssetResponse {
   pledged: boolean;
   pledgeCreditorId: string | null;
   duplicateWarning: boolean;
+}
+
+// --- Reviews (staff) ---
+export type ReviewStatus =
+  | 'OPEN'
+  | 'ASSIGNED'
+  | 'WAITING_FOR_INFORMATION'
+  | 'IN_PROGRESS'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CLOSED';
+
+export interface ReviewResponse {
+  reviewId: string;
+  applicationId: string;
+  status: ReviewStatus;
+  assigneeId: string | null;
+  route: BankruptcyRoute;
+  rulesetVersion: string;
+  lastDecisionReason: string | null;
 }

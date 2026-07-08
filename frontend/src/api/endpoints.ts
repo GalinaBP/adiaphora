@@ -3,6 +3,7 @@ import type {
   ApplicationResponse,
   AssetRequest,
   AssetResponse,
+  BankruptcyRoute,
   CompletionResponse,
   CreateApplicationResponse,
   CreditorRequest,
@@ -13,6 +14,7 @@ import type {
   PageResponse,
   RegisterRequest,
   RegisterResponse,
+  ReviewResponse,
   TokenResponse,
   ValidationResponse,
 } from './types';
@@ -79,4 +81,30 @@ export const assetsApi = {
     }),
   remove: (applicationId: string, assetId: string) =>
     request<void>(`/applications/${applicationId}/assets/${assetId}`, { method: 'DELETE' }),
+};
+
+export const reviewsApi = {
+  list: (page = 0, size = 20) =>
+    request<PageResponse<ReviewResponse>>(`/reviews?page=${page}&size=${size}`),
+  get: (reviewId: string) => request<ReviewResponse>(`/reviews/${reviewId}`),
+  assign: (reviewId: string, assigneeId: string) =>
+    request<ReviewResponse>(`/reviews/${reviewId}/assign`, {
+      method: 'POST',
+      body: { assigneeId },
+    }),
+  requestInformation: (reviewId: string, reason: string) =>
+    request<ReviewResponse>(`/reviews/${reviewId}/request-information`, {
+      method: 'POST',
+      body: { reason },
+    }),
+  approve: (reviewId: string, newRoute: BankruptcyRoute | null, reason: string) =>
+    request<ReviewResponse>(`/reviews/${reviewId}/approve`, {
+      method: 'POST',
+      body: { newRoute, reason: reason || null },
+    }),
+  reject: (reviewId: string, reason: string) =>
+    request<ReviewResponse>(`/reviews/${reviewId}/reject`, {
+      method: 'POST',
+      body: { reason },
+    }),
 };
