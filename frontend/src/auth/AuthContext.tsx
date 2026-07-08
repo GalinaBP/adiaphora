@@ -16,14 +16,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<MeResponse | null>(null);
-  const [initializing, setInitializing] = useState(true);
+  // Only "initializing" when there is a token whose user still needs resolving.
+  const [initializing, setInitializing] = useState(() => Boolean(tokenStore.get()));
 
   // On first load, if a token is present, resolve the current user.
   useEffect(() => {
     let active = true;
     const token = tokenStore.get();
     if (!token) {
-      setInitializing(false);
       return;
     }
     authApi
