@@ -231,3 +231,26 @@ export interface ReviewResponse {
   rulesetVersion: string;
   lastDecisionReason: string | null;
 }
+
+// --- Public eligibility estimate (anonymous) ---
+export type EligibilityVerdict =
+  | 'MFC_ELIGIBLE'
+  | 'AMOUNT_OUT_OF_RANGE'
+  | 'MANUAL_REVIEW'
+  | 'NEEDS_INFORMATION';
+
+export interface EligibilityEstimateRequest {
+  totalDebtAmount?: number | null;
+  hasRegularIncome?: boolean | null;
+  ownsMortgagedHome?: boolean | null;
+  previousBankruptcy?: boolean | null;
+  recentPropertyTransaction?: 'none' | 'sold' | 'gifted' | null;
+}
+
+export interface EligibilityEstimateResponse {
+  verdict: EligibilityVerdict;
+  route: BankruptcyRoute;
+  messages: string[];
+  missingInformation: string[];
+  rulesetVersion: string;
+}

@@ -46,6 +46,7 @@ Implemented per module across phases. See the ticket for the authoritative list.
 | Applications  | `POST/GET /applications`, `GET /applications/{id}`, `POST .../submit`, `POST .../cancel`, `GET .../status-history` |
 | Questionnaire | `GET /questionnaires/current`, `GET/PUT/POST /applications/{id}/questionnaire...` |
 | Rules         | `POST /applications/{id}/evaluate`, `GET /applications/{id}/evaluations/latest` |
+| Eligibility   | `POST /eligibility/estimate` (anonymous, non-binding MFC estimate; nothing persisted) |
 | Review        | `GET /reviews`, `GET /reviews/{id}`, `POST .../assign|request-information|approve|reject` |
 | Documents     | `POST/GET /applications/{id}/documents`, `GET /documents/{id}`, `GET /documents/{id}/download` |
 
