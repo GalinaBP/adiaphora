@@ -27,7 +27,8 @@ class RuleEvaluationRepositoryAdapter implements RuleEvaluationRepository {
     public RuleEvaluationRecord save(RuleEvaluationRecord record) {
         evaluations.save(new RuleEvaluationEntity(
                 record.id(), record.applicationId(), record.rulesetVersion(),
-                record.questionnaireVersion(), record.startedAt(), record.completedAt(),
+                record.questionnaireVersion(), record.inputSnapshotHash(),
+                record.startedAt(), record.completedAt(),
                 record.route(), record.manualReviewRequired(),
                 joinMissing(record.missingInformation())));
 
@@ -49,7 +50,8 @@ class RuleEvaluationRepositoryAdapter implements RuleEvaluationRepository {
                 .toList();
         return new RuleEvaluationRecord(
                 entity.getId(), entity.getApplicationId(), entity.getRulesetVersion(),
-                entity.getQuestionnaireVersion(), entity.getStartedAt(), entity.getCompletedAt(),
+                entity.getQuestionnaireVersion(), entity.getInputSnapshotHash(),
+                entity.getStartedAt(), entity.getCompletedAt(),
                 entity.getRoute(), entity.isManualReviewRequired(), triggered,
                 splitMissing(entity.getMissingInformation()));
     }

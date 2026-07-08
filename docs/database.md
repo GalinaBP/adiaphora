@@ -28,6 +28,7 @@ alters tables. Migrations live in `src/main/resources/db/migration` and are appl
 | V010    | `V010__create_creditors.sql`              | Phase 3       |
 | V011    | `V011__create_assets.sql`                 | Phase 3       |
 | V012    | `V012__create_financial_transactions.sql` | Phase 3       |
+| V013    | `V013__add_evaluation_input_snapshot_hash.sql` | Week 3   |
 
 Migrations are added alongside the module whose entities map them, so `validate` always has a matching
 schema. Integration tests run the full migration set against a real MySQL via Testcontainers.

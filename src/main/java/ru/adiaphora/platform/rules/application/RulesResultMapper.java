@@ -18,6 +18,7 @@ final class RulesResultMapper {
                 record.applicationId(),
                 record.rulesetVersion(),
                 record.questionnaireVersion(),
+                record.inputSnapshotHash(),
                 record.route(),
                 record.manualReviewRequired(),
                 record.triggeredRules().stream().map(RulesResultMapper::toFinding).toList(),

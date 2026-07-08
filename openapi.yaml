@@ -1069,6 +1069,11 @@ components:
           type: string
           nullable: true
           description: Null when no questionnaire answers exist yet.
+        inputSnapshotHash:
+          type: string
+          description: >-
+            SHA-256 (lowercase hex) of the questionnaire version and answers the evaluation was
+            computed from. Identifies the exact input of a historical evaluation.
         route: { $ref: '#/components/schemas/BankruptcyRoute' }
         manualReviewRequired: { type: boolean }
         triggeredRules:
