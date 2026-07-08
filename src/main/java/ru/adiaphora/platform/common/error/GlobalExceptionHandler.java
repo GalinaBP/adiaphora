@@ -6,12 +6,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import ru.adiaphora.platform.common.event.ResourceAccessDeniedEvent;
 import ru.adiaphora.platform.common.web.CorrelationId;
 
@@ -80,6 +86,71 @@ public class GlobalExceptionHandler {
         ApiError body = ApiError.of(HttpStatus.FORBIDDEN.value(), ErrorCode.ACCESS_DENIED,
                 "Access denied", request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    // --- client mistakes that must never surface as 500s ------------------------
+    // Logged without stack traces: these are request errors, not server faults.
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex,
+                                                         HttpServletRequest request) {
+        logClientError(request, "malformed request body");
+        ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
+                "Malformed request body", request.getRequestURI(), CorrelationId.current());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+                                                       HttpServletRequest request) {
+        logClientError(request, "type mismatch for '" + ex.getName() + "'");
+        ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
+                "Invalid value for '" + ex.getName() + "'", request.getRequestURI(),
+                CorrelationId.current());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParameter(MissingServletRequestParameterException ex,
+                                                           HttpServletRequest request) {
+        logClientError(request, "missing parameter '" + ex.getParameterName() + "'");
+        ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
+                "Missing required parameter '" + ex.getParameterName() + "'",
+                request.getRequestURI(), CorrelationId.current());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResource(NoResourceFoundException ex,
+                                                     HttpServletRequest request) {
+        logClientError(request, "no such resource");
+        ApiError body = ApiError.of(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
+                "Resource not found", request.getRequestURI(), CorrelationId.current());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex,
+                                                             HttpServletRequest request) {
+        logClientError(request, "method not allowed");
+        ApiError body = ApiError.of(HttpStatus.METHOD_NOT_ALLOWED.value(), ErrorCode.METHOD_NOT_ALLOWED,
+                "Method not allowed", request.getRequestURI(), CorrelationId.current());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(body);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMediaType(HttpMediaTypeNotSupportedException ex,
+                                                    HttpServletRequest request) {
+        logClientError(request, "unsupported media type");
+        ApiError body = ApiError.of(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
+                ErrorCode.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type",
+                request.getRequestURI(), CorrelationId.current());
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(body);
+    }
+
+    private void logClientError(HttpServletRequest request, String summary) {
+        log.debug("Client error [correlationId={}] {} {}: {}", CorrelationId.current(),
+                request.getMethod(), request.getRequestURI(), summary);
     }
 
     @ExceptionHandler(Exception.class)

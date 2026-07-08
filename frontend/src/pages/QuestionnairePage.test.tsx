@@ -144,6 +144,25 @@ describe('QuestionnairePage', () => {
     expect(input).toHaveAttribute('aria-invalid', 'true');
   });
 
+  it('keeps the typed value and shows the error when a save fails', async () => {
+    formMock.mockResolvedValue(form());
+    saveMock.mockRejectedValue(new ApiError(500, 'INTERNAL_ERROR', 'Server unavailable'));
+    renderPage();
+
+    const input = await screen.findByLabelText(/Full name/);
+    await userEvent.type(input, 'Anna Petrova');
+    await userEvent.tab();
+
+    // The failure is visible, but nothing the user typed is lost.
+    expect(await screen.findByText('Server unavailable')).toBeInTheDocument();
+    expect(input).toHaveValue('Anna Petrova');
+
+    // Navigating away and back still shows the locally kept value.
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText(/Full name/)).toHaveValue('Anna Petrova');
+  });
+
   it('validates on the last step and lets the user jump to a missing question', async () => {
     formMock.mockResolvedValue(form());
     validateMock.mockResolvedValue({
