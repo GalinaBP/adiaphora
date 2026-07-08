@@ -77,3 +77,22 @@ always off in `test`/`prod`). Introduced in Phase 2:
 
 Passwords are set in the seed runner and printed to the log on startup. **No real personal data is
 used anywhere.**
+
+## Demo scenarios (seeded with the accounts)
+
+`DemoDataSeeder` (same `adiaphora.seed.enabled` gate) drives the real use cases as
+`user@example.test`, so a demo needs no manual DB editing. It creates seven cases:
+
+| Case                    | Debt (RUB) | Outcome                                             |
+|-------------------------|-----------:|-----------------------------------------------------|
+| MFC lower bound         |     25,000 | `MFC_PRELIMINARY` (bound inclusive)                 |
+| MFC upper bound         |  1,000,000 | `MFC_PRELIMINARY` (bound inclusive)                 |
+| Below threshold         |     24,999 | `NOT_CURRENTLY_RECOMMENDED`                         |
+| Above threshold         |  1,000,001 | `COURT_PRELIMINARY`                                 |
+| Mortgaged home          |    500,000 | `MANUAL_REVIEW` + an OPEN review task for staff     |
+| Partial draft           |    300,000 | in-progress questionnaire (resume demo)             |
+| Empty draft             |          — | from `ApplicationSeedData` (fresh-start demo)       |
+
+Amounts are the AI-012 approved boundary cases, so the demo doubles as a live walkthrough of the
+rule engine. Evaluations, review tasks and audit records are all real (produced by the actual use
+cases, not inserted rows). Idempotent across restarts. Verified by `DemoDataSeedIntegrationTest`.
