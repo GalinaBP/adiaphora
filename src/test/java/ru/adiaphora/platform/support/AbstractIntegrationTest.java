@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import ru.adiaphora.platform.common.web.CorrelationIdFilter;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -61,11 +62,17 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    @Autowired
+    private CorrelationIdFilter correlationIdFilter;
+
     protected MockMvc mockMvc;
 
     @BeforeEach
     void setUpMockMvc() {
+        // MockMvc does not pick up servlet filters on its own — register the correlation-id filter
+        // explicitly so integration tests see the same X-Correlation-Id echo as the real app.
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilter(correlationIdFilter)
                 .apply(springSecurity())
                 .build();
     }
