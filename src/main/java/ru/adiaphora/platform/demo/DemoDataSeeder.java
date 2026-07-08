@@ -69,7 +69,13 @@ class DemoDataSeeder implements ApplicationRunner {
         userDirectory.findByEmail(DEMO_OWNER_EMAIL).ifPresent(owner -> {
             AuthenticatedUser principal =
                     new AuthenticatedUser(owner.userId(), DEMO_OWNER_EMAIL, Authorities.USER);
-            asUser(principal, this::seedScenarios);
+            try {
+                asUser(principal, this::seedScenarios);
+            } catch (RuntimeException ex) {
+                // Demo data is a convenience — never block application startup over it (e.g. when the
+                // active questionnaire definition doesn't carry the expected question codes).
+                log.warn("Demo data seeding skipped: {}", ex.getMessage());
+            }
         });
     }
 

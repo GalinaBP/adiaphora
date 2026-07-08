@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
 
-    static final MySQLContainer<?> MYSQL =
+    public static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>(DockerImageName.parse("mysql:8.4"))
                     .withDatabaseName("adiaphora")
                     .withUsername("adiaphora")
