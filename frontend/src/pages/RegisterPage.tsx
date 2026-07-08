@@ -20,18 +20,18 @@ export default function RegisterPage() {
       await register({ email, password });
       navigate('/login');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Registration failed');
+      setError(err instanceof ApiError ? err.message : 'Не удалось зарегистрироваться');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form className="form" onSubmit={onSubmit} aria-label="Register">
-      <h2>Create account</h2>
+    <form className="form" onSubmit={onSubmit} aria-label="Регистрация">
+      <h2>Регистрация</h2>
       {error && <p className="error" role="alert">{error}</p>}
       <label>
-        Email
+        Электронная почта
         <input
           type="email"
           value={email}
@@ -41,7 +41,7 @@ export default function RegisterPage() {
         />
       </label>
       <label>
-        Password
+        Пароль
         <input
           type="password"
           value={password}
@@ -52,7 +52,7 @@ export default function RegisterPage() {
         />
       </label>
       <button type="submit" disabled={submitting}>
-        {submitting ? 'Creating…' : 'Create account'}
+        {submitting ? 'Создаём…' : 'Создать аккаунт'}
       </button>
     </form>
   );

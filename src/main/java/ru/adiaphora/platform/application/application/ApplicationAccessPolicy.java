@@ -25,7 +25,7 @@ public class ApplicationAccessPolicy {
 
     public void requireAccess(BankruptcyApplication application, AuthenticatedUser user) {
         if (!canAccess(application, user)) {
-            throw new AccessDeniedBusinessException("You may not access this application");
+            throw new AccessDeniedBusinessException("У вас нет доступа к этому делу");
         }
     }
 

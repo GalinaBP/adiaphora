@@ -34,12 +34,12 @@ function renderPage() {
 }
 
 async function fillAndSubmit() {
-  await userEvent.type(screen.getByLabelText(/Total debt amount/), '350000');
-  await userEvent.selectOptions(screen.getByLabelText(/regular income/), 'yes');
-  await userEvent.selectOptions(screen.getByLabelText(/home under mortgage/), 'no');
-  await userEvent.selectOptions(screen.getByLabelText(/bankrupt before/), 'no');
-  await userEvent.selectOptions(screen.getByLabelText(/Property sold or gifted/), 'none');
-  await userEvent.click(screen.getByRole('button', { name: /Get my estimate/ }));
+  await userEvent.type(screen.getByLabelText(/Общая сумма долгов/), '350000');
+  await userEvent.selectOptions(screen.getByLabelText(/регулярный доход/), 'yes');
+  await userEvent.selectOptions(screen.getByLabelText(/жильё в ипотеке/), 'no');
+  await userEvent.selectOptions(screen.getByLabelText(/банкротом ранее/), 'no');
+  await userEvent.selectOptions(screen.getByLabelText(/Продавали или дарили имущество/), 'none');
+  await userEvent.click(screen.getByRole('button', { name: /Получить оценку/ }));
 }
 
 describe('HomePage', () => {
@@ -59,10 +59,10 @@ describe('HomePage', () => {
       recentPropertyTransaction: 'none',
     });
     expect(
-      await screen.findByText(/may qualify for out-of-court \(MFC\) bankruptcy/i),
+      await screen.findByText(/может подойти внесудебное банкротство/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/preliminary, non-binding estimate/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Create an account/i })).toHaveAttribute(
+    expect(screen.getByText(/предварительная оценка, не имеющая юридической силы/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Создать аккаунт/i })).toHaveAttribute(
       'href',
       '/register',
     );
@@ -77,7 +77,7 @@ describe('HomePage', () => {
     await fillAndSubmit();
 
     expect(
-      await screen.findByText(/does not fit this debt amount/i),
+      await screen.findByText(/не подходит по сумме долга/i),
     ).toBeInTheDocument();
   });
 
@@ -86,16 +86,16 @@ describe('HomePage', () => {
       response({
         verdict: 'MANUAL_REVIEW',
         route: 'MANUAL_REVIEW',
-        messages: ['A mortgaged home requires manual legal review.'],
+        messages: ['Ипотечное жильё требует проверки юристом.'],
       }),
     );
     renderPage();
 
     await fillAndSubmit();
 
-    expect(await screen.findByText(/needs a specialist/i)).toBeInTheDocument();
+    expect(await screen.findByText(/должен посмотреть специалист/i)).toBeInTheDocument();
     expect(
-      screen.getByText('A mortgaged home requires manual legal review.'),
+      screen.getByText('Ипотечное жильё требует проверки юристом.'),
     ).toBeInTheDocument();
   });
 
@@ -109,7 +109,7 @@ describe('HomePage', () => {
     );
     renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: /Get my estimate/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Получить оценку/ }));
 
     expect(estimateMock).toHaveBeenCalledWith({
       totalDebtAmount: null,
@@ -118,23 +118,23 @@ describe('HomePage', () => {
       previousBankruptcy: null,
       recentPropertyTransaction: null,
     });
-    expect(await screen.findByText(/Not enough information/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Недостаточно данных/i)).toBeInTheDocument();
   });
 
   it('shows an error banner when the API is unavailable', async () => {
     estimateMock.mockRejectedValue(new Error('down'));
     renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: /Get my estimate/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Получить оценку/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/unavailable/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/недоступна/i);
   });
 
   it('shows the Gosuslugi-sourced context with citation', () => {
     renderPage();
 
-    expect(screen.getByText(/About personal bankruptcy in Russia/)).toBeInTheDocument();
-    const source = screen.getByRole('link', { name: /Gosuslugi/i });
+    expect(screen.getByText(/О банкротстве физических лиц/)).toBeInTheDocument();
+    const source = screen.getByRole('link', { name: /Госуслуги/i });
     expect(source).toHaveAttribute(
       'href',
       'https://www.gosuslugi.ru/life/details/bankruptcy_of_individuals',

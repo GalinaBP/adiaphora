@@ -24,7 +24,7 @@ public class DebtAmountMissingRule implements BankruptcyRule {
     public RuleEvaluation evaluate(RuleContext context) {
         if (context.money(RuleInputs.TOTAL_DEBT_AMOUNT).isEmpty()) {
             return new RuleEvaluation(code(), RuleOutcome.NEEDS_INFORMATION, RuleSeverity.WARNING,
-                    "totalDebtAmount not provided", "Please provide your total debt amount.", true);
+                    "totalDebtAmount not provided", "Укажите общую сумму долга.", true);
         }
         return new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                 "totalDebtAmount present", null, false);

@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
                 .map(this::toFieldError)
                 .toList();
         ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
-                "Request validation failed", request.getRequestURI(), CorrelationId.current(), fieldErrors);
+                "Проверьте правильность заполнения полей", request.getRequestURI(), CorrelationId.current(), fieldErrors);
         return ResponseEntity.badRequest().body(body);
     }
 
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleAuthentication(AuthenticationException ex,
                                                          HttpServletRequest request) {
         ApiError body = ApiError.of(HttpStatus.UNAUTHORIZED.value(), ErrorCode.AUTHENTICATION_FAILED,
-                "Authentication failed", request.getRequestURI(), CorrelationId.current());
+                "Требуется вход в систему", request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
@@ -84,7 +84,7 @@ public class GlobalExceptionHandler {
                                                        HttpServletRequest request) {
         events.publishEvent(new ResourceAccessDeniedEvent(request.getRequestURI(), clock.instant()));
         ApiError body = ApiError.of(HttpStatus.FORBIDDEN.value(), ErrorCode.ACCESS_DENIED,
-                "Access denied", request.getRequestURI(), CorrelationId.current());
+                "Доступ запрещён", request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
@@ -96,7 +96,7 @@ public class GlobalExceptionHandler {
                                                          HttpServletRequest request) {
         logClientError(request, "malformed request body");
         ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
-                "Malformed request body", request.getRequestURI(), CorrelationId.current());
+                "Некорректный запрос", request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.badRequest().body(body);
     }
 
@@ -105,7 +105,7 @@ public class GlobalExceptionHandler {
                                                        HttpServletRequest request) {
         logClientError(request, "type mismatch for '" + ex.getName() + "'");
         ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
-                "Invalid value for '" + ex.getName() + "'", request.getRequestURI(),
+                "Недопустимое значение параметра '" + ex.getName() + "'", request.getRequestURI(),
                 CorrelationId.current());
         return ResponseEntity.badRequest().body(body);
     }
@@ -115,7 +115,7 @@ public class GlobalExceptionHandler {
                                                            HttpServletRequest request) {
         logClientError(request, "missing parameter '" + ex.getParameterName() + "'");
         ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ErrorCode.VALIDATION_ERROR,
-                "Missing required parameter '" + ex.getParameterName() + "'",
+                "Отсутствует обязательный параметр '" + ex.getParameterName() + "'",
                 request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.badRequest().body(body);
     }
@@ -125,7 +125,7 @@ public class GlobalExceptionHandler {
                                                      HttpServletRequest request) {
         logClientError(request, "no such resource");
         ApiError body = ApiError.of(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
-                "Resource not found", request.getRequestURI(), CorrelationId.current());
+                "Ресурс не найден", request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
@@ -134,7 +134,7 @@ public class GlobalExceptionHandler {
                                                              HttpServletRequest request) {
         logClientError(request, "method not allowed");
         ApiError body = ApiError.of(HttpStatus.METHOD_NOT_ALLOWED.value(), ErrorCode.METHOD_NOT_ALLOWED,
-                "Method not allowed", request.getRequestURI(), CorrelationId.current());
+                "Метод не поддерживается", request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(body);
     }
 
@@ -143,7 +143,7 @@ public class GlobalExceptionHandler {
                                                     HttpServletRequest request) {
         logClientError(request, "unsupported media type");
         ApiError body = ApiError.of(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
-                ErrorCode.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type",
+                ErrorCode.UNSUPPORTED_MEDIA_TYPE, "Неподдерживаемый формат данных",
                 request.getRequestURI(), CorrelationId.current());
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(body);
     }
@@ -159,7 +159,7 @@ public class GlobalExceptionHandler {
         // Full detail goes to the log (correlated), never to the client.
         log.error("Unhandled exception [correlationId={}]", correlationId, ex);
         ApiError body = ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.INTERNAL_ERROR,
-                "An unexpected error occurred", request.getRequestURI(), correlationId);
+                "Произошла непредвиденная ошибка", request.getRequestURI(), correlationId);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 

@@ -26,7 +26,7 @@ public class PreviousBankruptcyManualReviewRule implements BankruptcyRule {
                 .map(previous -> previous
                         ? new RuleEvaluation(code(), RuleOutcome.FAILED, RuleSeverity.MANUAL_REVIEW,
                         "previous bankruptcy declared",
-                        "A previous bankruptcy requires manual legal review.", true)
+                        "Предыдущее банкротство требует проверки юристом.", true)
                         : new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                         "no previous bankruptcy", null, false))
                 .orElseGet(() -> new RuleEvaluation(code(), RuleOutcome.NOT_APPLICABLE, RuleSeverity.INFO,

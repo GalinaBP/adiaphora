@@ -3,6 +3,7 @@ import { reviewsApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import type { BankruptcyRoute, ReviewResponse } from '../api/types';
+import { reviewStatusRu, routeRu } from '../i18n/labels';
 
 const ROUTES: BankruptcyRoute[] = [
   'MFC_PRELIMINARY',
@@ -44,7 +45,7 @@ export default function ReviewsPage() {
         if (active) setReviews(page.items);
       })
       .catch((err) => {
-        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load reviews');
+        if (active) setError(err instanceof ApiError ? err.message : 'Не удалось загрузить проверки');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -76,7 +77,7 @@ export default function ReviewsPage() {
       setNewRoute('');
       setNotice(done);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'The action failed. Please try again.');
+      setError(err instanceof ApiError ? err.message : 'Действие не выполнено. Попробуйте ещё раз.');
     } finally {
       setBusy(false);
     }
@@ -85,40 +86,40 @@ export default function ReviewsPage() {
   const approve = (review: ReviewResponse) => {
     const overriding = newRoute !== '' && newRoute !== review.route;
     if (overriding && !reason.trim()) {
-      setFormError('Overriding the recommended route requires a reason.');
+      setFormError('Для изменения маршрута требуется причина.');
       return;
     }
     void perform(
       () => reviewsApi.approve(review.reviewId, overriding ? newRoute : null, reason.trim()),
-      overriding ? 'Approved with route override.' : 'Approved.',
+      overriding ? 'Одобрено с изменением маршрута.' : 'Одобрено.',
     );
   };
 
   const reject = (review: ReviewResponse) => {
     if (!reason.trim()) {
-      setFormError('Rejecting a review requires a reason.');
+      setFormError('Для отклонения требуется причина.');
       return;
     }
-    void perform(() => reviewsApi.reject(review.reviewId, reason.trim()), 'Rejected.');
+    void perform(() => reviewsApi.reject(review.reviewId, reason.trim()), 'Отклонено.');
   };
 
   const requestInfo = (review: ReviewResponse) => {
     if (!reason.trim()) {
-      setFormError('Requesting information requires a reason.');
+      setFormError('Для запроса информации требуется причина.');
       return;
     }
     void perform(
       () => reviewsApi.requestInformation(review.reviewId, reason.trim()),
-      'Information requested.',
+      'Информация запрошена.',
     );
   };
 
   const assign = (review: ReviewResponse, target: string) => {
     if (!target.trim()) {
-      setFormError('Enter the user id to assign this review to.');
+      setFormError('Укажите ID пользователя для назначения.');
       return;
     }
-    void perform(() => reviewsApi.assign(review.reviewId, target.trim()), 'Assigned.');
+    void perform(() => reviewsApi.assign(review.reviewId, target.trim()), 'Назначено.');
   };
 
   const selected = reviews.find((r) => r.reviewId === openId) ?? null;
@@ -126,8 +127,8 @@ export default function ReviewsPage() {
   return (
     <section>
       <div className="page-head">
-        <h2>Manual reviews</h2>
-        {role && <span className="muted">Role: {role}</span>}
+        <h2>Ручные проверки</h2>
+        {role && <span className="muted">Роль: {role}</span>}
       </div>
 
       {error && <p className="error" role="alert">{error}</p>}
@@ -136,16 +137,16 @@ export default function ReviewsPage() {
       {loading ? (
         <p className="muted">Loading reviews…</p>
       ) : reviews.length === 0 ? (
-        <p className="muted">No review tasks.</p>
+        <p className="muted">Задач на проверку нет.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Review</th>
-              <th>Application</th>
-              <th>Status</th>
-              <th>Route</th>
-              <th>Assignee</th>
+              <th>Проверка</th>
+              <th>Дело</th>
+              <th>Статус</th>
+              <th>Маршрут</th>
+              <th>Исполнитель</th>
               <th />
             </tr>
           </thead>
@@ -154,12 +155,12 @@ export default function ReviewsPage() {
               <tr key={review.reviewId}>
                 <td className="mono">{review.reviewId.slice(0, 8)}</td>
                 <td className="mono">{review.applicationId.slice(0, 8)}</td>
-                <td>{review.status}</td>
-                <td>{review.route}</td>
+                <td>{reviewStatusRu(review.status)}</td>
+                <td>{routeRu(review.route)}</td>
                 <td className="mono">{review.assigneeId ? review.assigneeId.slice(0, 8) : '—'}</td>
                 <td>
                   <button type="button" onClick={() => openReview(review.reviewId)}>
-                    {openId === review.reviewId ? 'Close' : 'Open'}
+                    {openId === review.reviewId ? 'Скрыть' : 'Открыть'}
                   </button>
                 </td>
               </tr>
@@ -171,76 +172,76 @@ export default function ReviewsPage() {
       {selected && (
         <div className="review-detail">
           <h3>
-            Review <span className="mono">{selected.reviewId.slice(0, 8)}</span>
+            Проверка <span className="mono">{selected.reviewId.slice(0, 8)}</span>
           </h3>
           <p className="muted">
-            Recommended route: <strong>{selected.route}</strong> (ruleset {selected.rulesetVersion})
+            Рекомендованный маршрут: <strong>{routeRu(selected.route)}</strong> (набор правил {selected.rulesetVersion})
           </p>
           {selected.lastDecisionReason && (
-            <p className="muted">Last reason: {selected.lastDecisionReason}</p>
+            <p className="muted">Последняя причина: {selected.lastDecisionReason}</p>
           )}
 
           {readOnly ? (
-            <p className="muted">Read-only access: your role cannot modify reviews.</p>
+            <p className="muted">Доступ только для чтения: ваша роль не может изменять проверки.</p>
           ) : (
             <>
               {formError && <p className="error" role="alert">{formError}</p>}
 
               {canAssign && (
                 <div className="review-action">
-                  <h4>Assign</h4>
+                  <h4>Назначение</h4>
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => user && assign(selected, user.userId)}
                   >
-                    Assign to me
+                    Назначить себе
                   </button>{' '}
                   <input
                     type="text"
-                    placeholder="assignee user id"
-                    aria-label="Assignee user id"
+                    placeholder="ID пользователя"
+                    aria-label="ID пользователя-исполнителя"
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
                   />{' '}
                   <button type="button" disabled={busy} onClick={() => assign(selected, assigneeId)}>
-                    Assign
+                    Назначить
                   </button>
                 </div>
               )}
 
               <div className="review-action">
-                <h4>Decision</h4>
-                <label htmlFor="review-reason">Reason</label>
+                <h4>Решение</h4>
+                <label htmlFor="review-reason">Причина</label>
                 <textarea
                   id="review-reason"
                   value={reason}
                   maxLength={1000}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Required for rejections, information requests and route overrides"
+                  placeholder="Обязательна для отклонения, запроса информации и изменения маршрута"
                 />
 
                 {canDecide && (
                   <>
-                    <label htmlFor="review-route">Confirmed route</label>
+                    <label htmlFor="review-route">Подтверждённый маршрут</label>
                     <select
                       id="review-route"
                       value={newRoute}
                       onChange={(e) => setNewRoute(e.target.value as '' | BankruptcyRoute)}
                     >
-                      <option value="">Keep recommended ({selected.route})</option>
+                      <option value="">Оставить рекомендованный ({routeRu(selected.route)})</option>
                       {ROUTES.filter((r) => r !== selected.route).map((r) => (
                         <option key={r} value={r}>
-                          Override to {r}
+                          Изменить на {routeRu(r)}
                         </option>
                       ))}
                     </select>
                     <div className="review-buttons">
                       <button type="button" disabled={busy} onClick={() => approve(selected)}>
-                        Approve
+                        Одобрить
                       </button>{' '}
                       <button type="button" disabled={busy} onClick={() => reject(selected)}>
-                        Reject
+                        Отклонить
                       </button>
                     </div>
                   </>
@@ -249,7 +250,7 @@ export default function ReviewsPage() {
                 {canRequestInfo && (
                   <div className="review-buttons">
                     <button type="button" disabled={busy} onClick={() => requestInfo(selected)}>
-                      Request information
+                      Запросить информацию
                     </button>
                   </div>
                 )}

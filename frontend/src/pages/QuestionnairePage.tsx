@@ -38,7 +38,7 @@ export default function QuestionnairePage() {
       })
       .catch((err) => {
         if (active) {
-          setLoadError(err instanceof ApiError ? err.message : 'Failed to load questionnaire');
+          setLoadError(err instanceof ApiError ? err.message : 'Не удалось загрузить анкету');
         }
       })
       .finally(() => {
@@ -66,7 +66,7 @@ export default function QuestionnairePage() {
     return map;
   }, [form]);
 
-  if (loading) return <p className="muted">Loading questionnaire…</p>;
+  if (loading) return <p className="muted">Загрузка анкеты…</p>;
   if (loadError)
     return (
       <p className="error" role="alert">
@@ -107,7 +107,7 @@ export default function QuestionnairePage() {
           ...Object.fromEntries(err.body!.fieldErrors!.map((fe) => [fe.field, fe.message])),
         }));
       } else {
-        setSaveError(err instanceof ApiError ? err.message : 'Failed to save answer');
+        setSaveError(err instanceof ApiError ? err.message : 'Не удалось сохранить ответ');
       }
     }
   };
@@ -121,7 +121,7 @@ export default function QuestionnairePage() {
       setValidation(result);
       setFieldErrors(Object.fromEntries(result.fieldErrors.map((fe) => [fe.field, fe.message])));
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Failed to validate questionnaire');
+      setSaveError(err instanceof ApiError ? err.message : 'Не удалось проверить анкету');
     } finally {
       setValidating(false);
     }
@@ -174,15 +174,15 @@ export default function QuestionnairePage() {
           onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
           disabled={stepIndex === 0}
         >
-          Back
+          Назад
         </button>
         {isLastStep ? (
           <button type="button" onClick={runValidation} disabled={validating}>
-            {validating ? 'Checking…' : 'Check answers'}
+            {validating ? 'Проверяем…' : 'Проверить ответы'}
           </button>
         ) : (
           <button type="button" onClick={() => setStepIndex((i) => Math.min(sections.length - 1, i + 1))}>
-            Next
+            Далее
           </button>
         )}
       </div>
@@ -193,10 +193,10 @@ export default function QuestionnairePage() {
           role="status"
         >
           {validation.complete ? (
-            <p>All required questions are answered. This case is ready to submit.</p>
+            <p>Все обязательные вопросы отвечены. Дело готово к подаче.</p>
           ) : (
             <>
-              <p className="warning">Some required questions still need answers:</p>
+              <p className="warning">Остались обязательные вопросы без ответа:</p>
               <ul>
                 {validation.missingRequired.map((code) => (
                   <li key={code}>
@@ -217,7 +217,7 @@ export default function QuestionnairePage() {
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === 'idle') return null;
   const text =
-    state === 'saving' ? 'Saving…' : state === 'saved' ? 'All changes saved' : 'Save failed';
+    state === 'saving' ? 'Сохраняем…' : state === 'saved' ? 'Все изменения сохранены' : 'Не удалось сохранить';
   return (
     <span className={`save-indicator ${state}`} role="status" aria-live="polite">
       {text}

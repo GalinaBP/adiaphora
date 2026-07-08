@@ -25,7 +25,7 @@ public class PaymentAbilityMissingRule implements BankruptcyRule {
         if (!context.isAnswered(RuleInputs.HAS_REGULAR_INCOME)) {
             return new RuleEvaluation(code(), RuleOutcome.NEEDS_INFORMATION, RuleSeverity.WARNING,
                     "hasRegularIncome not provided",
-                    "Please indicate whether you have a regular income.", true);
+                    "Укажите, есть ли у вас регулярный доход.", true);
         }
         return new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                 "hasRegularIncome present", null, false);

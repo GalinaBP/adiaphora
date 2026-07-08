@@ -32,7 +32,7 @@ public class MfcUpperBoundRule implements BankruptcyRule {
         if (debt.compareTo(RuleInputs.MFC_UPPER_BOUND) > 0) {
             return new RuleEvaluation(code(), RuleOutcome.FAILED, RuleSeverity.INFO,
                     "debt " + debt + " above MFC upper bound " + RuleInputs.MFC_UPPER_BOUND,
-                    "Your debt exceeds the out-of-court (MFC) maximum; the court route is likely.", false);
+                    "Сумма долга превышает максимум для внесудебного банкротства (МФЦ); вероятен судебный порядок.", false);
         }
         return new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
                 "debt at or below MFC upper bound", null, false);

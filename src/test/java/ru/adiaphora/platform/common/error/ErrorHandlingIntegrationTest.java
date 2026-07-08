@@ -50,7 +50,7 @@ class ErrorHandlingIntegrationTest extends AbstractIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.message").value("Invalid value for 'applicationId'"))
+                .andExpect(jsonPath("$.message").value("Недопустимое значение параметра 'applicationId'"))
                 .andReturn();
         assertSafeBody(result);
     }

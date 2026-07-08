@@ -32,17 +32,17 @@ public class AnswerValidator {
         return switch (question.type()) {
             case TEXT, TEXTAREA -> Optional.empty();
             case INTEGER -> parsesAsLong(value) ? Optional.empty()
-                    : Optional.of("must be a whole number");
+                    : Optional.of("должно быть целым числом");
             case MONEY -> validMoney(value) ? Optional.empty()
-                    : Optional.of("must be a non-negative amount with up to 2 decimals");
+                    : Optional.of("должно быть неотрицательной суммой (до 2 знаков после запятой)");
             case BOOLEAN -> ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value))
-                    ? Optional.empty() : Optional.of("must be true or false");
+                    ? Optional.empty() : Optional.of("должно быть значением «да» или «нет»");
             case DATE -> parsesAsDate(value) ? Optional.empty()
-                    : Optional.of("must be an ISO-8601 date (YYYY-MM-DD)");
+                    : Optional.of("должна быть дата в формате ГГГГ-ММ-ДД");
             case SINGLE_CHOICE -> question.option(value).isPresent() ? Optional.empty()
-                    : Optional.of("must be one of the allowed options");
+                    : Optional.of("должно быть одним из допустимых вариантов");
             case MULTIPLE_CHOICE -> allOptionsValid(question, value) ? Optional.empty()
-                    : Optional.of("must be a comma-separated list of allowed options");
+                    : Optional.of("должно быть списком допустимых вариантов через запятую");
         };
     }
 

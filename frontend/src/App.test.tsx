@@ -17,21 +17,21 @@ function renderAt(path: string) {
 describe('App routing', () => {
   it('renders the login page on /login', async () => {
     renderAt('/login');
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Вход' })).toBeInTheDocument();
   });
 
   it('renders the register page on /register', async () => {
     renderAt('/register');
-    expect(await screen.findByRole('heading', { name: 'Create account' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Регистрация' })).toBeInTheDocument();
   });
 
   it('redirects unauthenticated users from a protected route to login', async () => {
     renderAt('/applications');
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Вход' })).toBeInTheDocument();
   });
 
   it('shows a not-found page for unknown routes', async () => {
     renderAt('/does-not-exist');
-    expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Страница не найдена' })).toBeInTheDocument();
   });
 });
