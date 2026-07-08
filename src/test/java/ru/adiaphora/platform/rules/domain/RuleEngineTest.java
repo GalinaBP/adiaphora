@@ -1,6 +1,8 @@
 package ru.adiaphora.platform.rules.domain;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import ru.adiaphora.platform.application.api.BankruptcyRoute;
 import ru.adiaphora.platform.questionnaire.api.QuestionnaireSnapshot;
 import ru.adiaphora.platform.rules.api.RuleOutcome;
@@ -13,7 +15,6 @@ import ru.adiaphora.platform.rules.domain.rules.PaymentAbilityMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.PreviousBankruptcyManualReviewRule;
 import ru.adiaphora.platform.rules.domain.rules.RecentPropertyTransactionManualReviewRule;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,67 +63,63 @@ class RuleEngineTest {
         assertThat(result.missingInformation()).isEmpty();
     }
 
-    @Test
-    void missingDebtRequiresInformation() {
+    /**
+     * The AI-012 approved boundary cases: bounds are inclusive, so 25 000 and 1 000 000 stay on the
+     * MFC route while 24 999 and 1 000 001 fall outside. Kopeck-precision rows guard the exact edge.
+     * Expected results pending lawyer approval (placeholder thresholds).
+     */
+    @ParameterizedTest(name = "debt {0} -> {1}")
+    @CsvSource({
+            "1000,       NOT_CURRENTLY_RECOMMENDED",
+            "24999,      NOT_CURRENTLY_RECOMMENDED",
+            "24999.99,   NOT_CURRENTLY_RECOMMENDED",
+            "25000,      MFC_PRELIMINARY",
+            "25000.01,   MFC_PRELIMINARY",
+            "100000,     MFC_PRELIMINARY",
+            "999999.99,  MFC_PRELIMINARY",
+            "1000000,    MFC_PRELIMINARY",
+            "1000000.01, COURT_PRELIMINARY",
+            "1000001,    COURT_PRELIMINARY",
+            "2000000,    COURT_PRELIMINARY"
+    })
+    void approvedAmountBoundaryCases(String debtAmount, BankruptcyRoute expectedRoute) {
         Map<String, String> answers = baseAnswers();
-        answers.remove("totalDebtAmount");
+        answers.put("totalDebtAmount", debtAmount);
+        EngineResult result = evaluate(answers);
+        assertThat(result.route()).isEqualTo(expectedRoute);
+        assertThat(result.manualReviewRequired()).isFalse();
+        assertThat(result.missingInformation()).isEmpty();
+    }
+
+    @ParameterizedTest(name = "missing {0} -> {1}")
+    @CsvSource({
+            "totalDebtAmount,  APPLICATION-DEBT-AMOUNT-MISSING",
+            "hasRegularIncome, APPLICATION-PAYMENT-ABILITY-MISSING"
+    })
+    void missingAnswerRequiresInformation(String questionCode, String expectedRuleCode) {
+        Map<String, String> answers = baseAnswers();
+        answers.remove(questionCode);
         EngineResult result = evaluate(answers);
         assertThat(result.route()).isEqualTo(BankruptcyRoute.INSUFFICIENT_INFORMATION);
-        assertThat(result.missingInformation()).contains("APPLICATION-DEBT-AMOUNT-MISSING");
+        assertThat(result.missingInformation()).contains(expectedRuleCode);
         assertThat(result.manualReviewRequired()).isFalse();
     }
 
-    @Test
-    void mortgageForcesManualReview() {
+    @ParameterizedTest(name = "{0}={1} -> {2}")
+    @CsvSource({
+            "ownsMortgagedHome,         true,   MANUAL-REVIEW-MORTGAGE",
+            "previousBankruptcy,        true,   MANUAL-REVIEW-PREVIOUS-BANKRUPTCY",
+            "recentPropertyTransaction, sold,   MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
+            "recentPropertyTransaction, gifted, MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION"
+    })
+    void flaggedAnswerForcesManualReview(String questionCode, String answer, String expectedRuleCode) {
         Map<String, String> answers = baseAnswers();
-        answers.put("ownsMortgagedHome", "true");
+        answers.put(questionCode, answer);
         EngineResult result = evaluate(answers);
         assertThat(result.route()).isEqualTo(BankruptcyRoute.MANUAL_REVIEW);
         assertThat(result.manualReviewRequired()).isTrue();
-    }
-
-    @Test
-    void debtAboveUpperBoundRoutesToCourt() {
-        Map<String, String> answers = baseAnswers();
-        answers.put("totalDebtAmount", "2000000");
-        EngineResult result = evaluate(answers);
-        assertThat(result.route()).isEqualTo(BankruptcyRoute.COURT_PRELIMINARY);
-    }
-
-    @Test
-    void debtBelowLowerBoundIsNotRecommended() {
-        Map<String, String> answers = baseAnswers();
-        answers.put("totalDebtAmount", "1000");
-        EngineResult result = evaluate(answers);
-        assertThat(result.route()).isEqualTo(BankruptcyRoute.NOT_CURRENTLY_RECOMMENDED);
-    }
-
-    @Test
-    void debtExactlyAtLowerBoundIsMfcPreliminary() {
-        Map<String, String> answers = baseAnswers();
-        answers.put("totalDebtAmount", RuleInputs.MFC_LOWER_BOUND.toPlainString());
-        assertThat(evaluate(answers).route()).isEqualTo(BankruptcyRoute.MFC_PRELIMINARY);
-    }
-
-    @Test
-    void debtJustBelowLowerBoundIsNotRecommended() {
-        Map<String, String> answers = baseAnswers();
-        answers.put("totalDebtAmount", RuleInputs.MFC_LOWER_BOUND.subtract(new BigDecimal("0.01")).toPlainString());
-        assertThat(evaluate(answers).route()).isEqualTo(BankruptcyRoute.NOT_CURRENTLY_RECOMMENDED);
-    }
-
-    @Test
-    void debtExactlyAtUpperBoundIsMfcPreliminary() {
-        Map<String, String> answers = baseAnswers();
-        answers.put("totalDebtAmount", RuleInputs.MFC_UPPER_BOUND.toPlainString());
-        assertThat(evaluate(answers).route()).isEqualTo(BankruptcyRoute.MFC_PRELIMINARY);
-    }
-
-    @Test
-    void debtJustAboveUpperBoundRoutesToCourt() {
-        Map<String, String> answers = baseAnswers();
-        answers.put("totalDebtAmount", RuleInputs.MFC_UPPER_BOUND.add(new BigDecimal("0.01")).toPlainString());
-        assertThat(evaluate(answers).route()).isEqualTo(BankruptcyRoute.COURT_PRELIMINARY);
+        assertThat(result.triggered())
+                .anyMatch(e -> e.ruleCode().equals(expectedRuleCode));
     }
 
     @Test
