@@ -16,6 +16,11 @@ public class DebtAmountMissingRule implements BankruptcyRule {
     }
 
     @Override
+    public int order() {
+        return 10;
+    }
+
+    @Override
     public RuleEvaluation evaluate(RuleContext context) {
         if (context.money(RuleInputs.TOTAL_DEBT_AMOUNT).isEmpty()) {
             return new RuleEvaluation(code(), RuleOutcome.NEEDS_INFORMATION, RuleSeverity.WARNING,

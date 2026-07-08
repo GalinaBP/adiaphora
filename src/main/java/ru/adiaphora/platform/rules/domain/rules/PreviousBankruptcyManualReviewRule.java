@@ -16,6 +16,11 @@ public class PreviousBankruptcyManualReviewRule implements BankruptcyRule {
     }
 
     @Override
+    public int order() {
+        return 60;
+    }
+
+    @Override
     public RuleEvaluation evaluate(RuleContext context) {
         return context.bool(RuleInputs.PREVIOUS_BANKRUPTCY)
                 .map(previous -> previous

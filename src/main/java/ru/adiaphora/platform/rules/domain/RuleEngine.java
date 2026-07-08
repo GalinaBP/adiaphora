@@ -3,11 +3,16 @@ package ru.adiaphora.platform.rules.domain;
 import ru.adiaphora.platform.application.api.BankruptcyRoute;
 import ru.adiaphora.platform.rules.api.RuleOutcome;
 
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Runs the configured rules over a {@link RuleContext} and derives a preliminary route. Pure and
- * deterministic — given the same rules and answers it always produces the same result.
+ * deterministic — given the same rules and answers it always produces the same result, including
+ * evaluation order: rules are sorted by {@link BankruptcyRule#order()} (ties broken by code), so the
+ * sequence never depends on how the rule list was assembled.
  *
  * <p>Route priority (placeholder policy, pending legal review):
  * <ol>
@@ -26,7 +31,21 @@ public class RuleEngine {
     private final List<BankruptcyRule> rules;
 
     public RuleEngine(List<BankruptcyRule> rules) {
-        this.rules = List.copyOf(rules);
+        this.rules = rules.stream()
+                .sorted(Comparator.comparingInt(BankruptcyRule::order)
+                        .thenComparing(BankruptcyRule::code))
+                .toList();
+        requireUniqueCodes(this.rules);
+    }
+
+    /** Persisted findings are keyed by rule code, so two rules sharing a code would be indistinguishable. */
+    private static void requireUniqueCodes(List<BankruptcyRule> rules) {
+        Set<String> codes = new HashSet<>();
+        for (BankruptcyRule rule : rules) {
+            if (!codes.add(rule.code())) {
+                throw new IllegalArgumentException("Duplicate rule code: " + rule.code());
+            }
+        }
     }
 
     public EngineResult evaluate(RuleContext context) {

@@ -16,6 +16,11 @@ public class MortgageManualReviewRule implements BankruptcyRule {
     }
 
     @Override
+    public int order() {
+        return 50;
+    }
+
+    @Override
     public RuleEvaluation evaluate(RuleContext context) {
         return context.bool(RuleInputs.OWNS_MORTGAGED_HOME)
                 .map(owns -> owns

@@ -11,5 +11,11 @@ public interface BankruptcyRule {
 
     String code();
 
+    /**
+     * Position in the evaluation sequence. The {@link RuleEngine} sorts by this (ties broken by
+     * {@link #code()}), so evaluation and finding order never depend on bean registration order.
+     */
+    int order();
+
     RuleEvaluation evaluate(RuleContext context);
 }
