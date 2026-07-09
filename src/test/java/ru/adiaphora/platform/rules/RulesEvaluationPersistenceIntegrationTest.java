@@ -58,6 +58,7 @@ class RulesEvaluationPersistenceIntegrationTest extends AbstractIntegrationTest 
         saveAnswer(token, applicationId, "ownsMortgagedHome", "true");
         saveAnswer(token, applicationId, "previousBankruptcy", "false");
         saveAnswer(token, applicationId, "recentPropertyTransaction", "none");
+        saveAnswer(token, applicationId, "mfcStatutoryGround", "enforcement_ended");
 
         String firstResponse = evaluate(token, applicationId);
         String firstId = objectMapper.readTree(firstResponse).get("evaluationId").asText();

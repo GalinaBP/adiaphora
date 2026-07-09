@@ -14,7 +14,7 @@ export default function AuthLayout() {
     <div className="auth-shell">
       <main className="auth-card">
         <h1 className="brand">
-          <Link to="/">Adiaphora</Link>
+          <Link to="/">Адиафора</Link>
         </h1>
         <p className="muted">Подготовка документов для банкротства физических лиц</p>
         <Outlet />

@@ -8,7 +8,9 @@ import ru.adiaphora.platform.rules.domain.rules.DebtAmountMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcLowerBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcUpperBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MortgageManualReviewRule;
+import ru.adiaphora.platform.rules.domain.rules.NoStatutoryGroundManualReviewRule;
 import ru.adiaphora.platform.rules.domain.rules.PaymentAbilityMissingRule;
+import ru.adiaphora.platform.rules.domain.rules.StatutoryGroundMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.PreviousBankruptcyManualReviewRule;
 import ru.adiaphora.platform.rules.domain.rules.RecentPropertyTransactionManualReviewRule;
 
@@ -29,6 +31,16 @@ class RulesConfig {
     @Bean
     BankruptcyRule paymentAbilityMissingRule() {
         return new PaymentAbilityMissingRule();
+    }
+
+    @Bean
+    BankruptcyRule statutoryGroundMissingRule() {
+        return new StatutoryGroundMissingRule();
+    }
+
+    @Bean
+    BankruptcyRule noStatutoryGroundManualReviewRule() {
+        return new NoStatutoryGroundManualReviewRule();
     }
 
     @Bean

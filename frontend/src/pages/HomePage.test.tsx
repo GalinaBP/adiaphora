@@ -39,6 +39,10 @@ async function fillAndSubmit() {
   await userEvent.selectOptions(screen.getByLabelText(/жильё в ипотеке/), 'no');
   await userEvent.selectOptions(screen.getByLabelText(/банкротом ранее/), 'no');
   await userEvent.selectOptions(screen.getByLabelText(/Продавали или дарили имущество/), 'none');
+  await userEvent.selectOptions(
+    screen.getByLabelText(/одну из категорий для внесудебного банкротства/),
+    'enforcement_ended',
+  );
   await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
 }
 
@@ -57,6 +61,7 @@ describe('HomePage', () => {
       ownsMortgagedHome: false,
       previousBankruptcy: false,
       recentPropertyTransaction: 'none',
+      mfcStatutoryGround: 'enforcement_ended',
     });
     expect(
       await screen.findByText(/Есть основания продолжить проверку для подачи через МФЦ/i),
@@ -118,6 +123,7 @@ describe('HomePage', () => {
       ownsMortgagedHome: null,
       previousBankruptcy: null,
       recentPropertyTransaction: null,
+      mfcStatutoryGround: null,
     });
     expect(await screen.findByText(/Недостаточно данных/i)).toBeInTheDocument();
   });

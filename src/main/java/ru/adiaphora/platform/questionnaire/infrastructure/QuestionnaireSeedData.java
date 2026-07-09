@@ -68,8 +68,12 @@ class QuestionnaireSeedData implements ApplicationRunner {
         QuestionDefinitionEntity propertyTx = question(versionId, "assets", "recentPropertyTransaction",
                 QuestionType.SINGLE_CHOICE, "Сделки с имуществом за последние 3 года", true, 6);
         defs.add(propertyTx);
+        QuestionDefinitionEntity statutoryGround = question(versionId, "debts", "mfcStatutoryGround",
+                QuestionType.SINGLE_CHOICE,
+                "Подходите ли вы под одну из категорий для внесудебного банкротства?", true, 7);
+        defs.add(statutoryGround);
         defs.add(question(versionId, "personal", "employmentStatus", QuestionType.SINGLE_CHOICE,
-                "Текущая занятость", false, 7));
+                "Текущая занятость", false, 8));
 
         questions.saveAll(defs);
 
@@ -77,6 +81,18 @@ class QuestionnaireSeedData implements ApplicationRunner {
                 new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "none", "Нет", 1),
                 new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "sold", "Продавал(а) имущество", 2),
                 new QuestionOptionEntity(UUID.randomUUID(), propertyTx.getId(), "gifted", "Дарил(а) имущество", 3)));
+
+        options.saveAll(List.of(
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "enforcement_ended",
+                        "Исполнительное производство окончено: имущества нет, документ вернули взыскателю", 1),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "pensioner",
+                        "Я пенсионер, пенсия — основной доход, есть неисполненный исполнительный документ", 2),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "child_benefit",
+                        "Получаю пособие на ребёнка, есть неисполненный исполнительный документ", 3),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "long_enforcement",
+                        "Долг взыскивается 7 лет и более, документ полностью не исполнен", 4),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "none",
+                        "Ни одна из ситуаций не относится ко мне", 5)));
 
         UUID employmentId = defs.get(defs.size() - 1).getId();
         options.saveAll(List.of(

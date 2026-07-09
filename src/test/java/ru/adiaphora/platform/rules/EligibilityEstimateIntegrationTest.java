@@ -47,7 +47,8 @@ class EligibilityEstimateIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"totalDebtAmount\":500000,\"hasRegularIncome\":true,"
                                 + "\"ownsMortgagedHome\":true,\"previousBankruptcy\":false,"
-                                + "\"recentPropertyTransaction\":\"none\"}"))
+                                + "\"recentPropertyTransaction\":\"none\","
+                                + "\"mfcStatutoryGround\":\"enforcement_ended\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verdict").value("MANUAL_REVIEW"))
                 .andExpect(jsonPath("$.messages").isNotEmpty());
@@ -67,7 +68,8 @@ class EligibilityEstimateIntegrationTest extends AbstractIntegrationTest {
     void invalidValuesAreRejectedWithValidationEnvelope() throws Exception {
         mockMvc.perform(post("/api/v1/eligibility/estimate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"totalDebtAmount\":-1,\"recentPropertyTransaction\":\"burned\"}"))
+                        .content("{\"totalDebtAmount\":-1,\"recentPropertyTransaction\":\"burned\","
+                                + "\"mfcStatutoryGround\":\"lottery\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.fieldErrors").isArray());
@@ -94,6 +96,7 @@ class EligibilityEstimateIntegrationTest extends AbstractIntegrationTest {
     private String completeAnswers(String debt) {
         return "{\"totalDebtAmount\":" + debt + ",\"hasRegularIncome\":true,"
                 + "\"ownsMortgagedHome\":false,\"previousBankruptcy\":false,"
-                + "\"recentPropertyTransaction\":\"none\"}";
+                + "\"recentPropertyTransaction\":\"none\","
+                + "\"mfcStatutoryGround\":\"enforcement_ended\"}";
     }
 }
