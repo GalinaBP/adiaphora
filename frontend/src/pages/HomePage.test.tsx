@@ -39,7 +39,7 @@ async function fillAndSubmit() {
   await userEvent.selectOptions(screen.getByLabelText(/жильё в ипотеке/), 'no');
   await userEvent.selectOptions(screen.getByLabelText(/банкротом ранее/), 'no');
   await userEvent.selectOptions(screen.getByLabelText(/Продавали или дарили имущество/), 'none');
-  await userEvent.click(screen.getByRole('button', { name: /Получить оценку/ }));
+  await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
 }
 
 describe('HomePage', () => {
@@ -59,13 +59,12 @@ describe('HomePage', () => {
       recentPropertyTransaction: 'none',
     });
     expect(
-      await screen.findByText(/может подойти внесудебное банкротство/i),
+      await screen.findByText(/Есть основания продолжить проверку для подачи через МФЦ/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/предварительная оценка, не имеющая юридической силы/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Создать аккаунт/i })).toHaveAttribute(
-      'href',
-      '/register',
-    );
+    expect(screen.getByText(/не имеет юридической силы/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /Продолжить проверку условий МФЦ/i }),
+    ).toHaveAttribute('href', '/register');
   });
 
   it('shows the out-of-range verdict', async () => {
@@ -77,7 +76,7 @@ describe('HomePage', () => {
     await fillAndSubmit();
 
     expect(
-      await screen.findByText(/не подходит по сумме долга/i),
+      await screen.findByText(/Условие по сумме долга для МФЦ не выполнено/i),
     ).toBeInTheDocument();
   });
 
@@ -93,7 +92,9 @@ describe('HomePage', () => {
 
     await fillAndSubmit();
 
-    expect(await screen.findByText(/должен посмотреть специалист/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Нужна дополнительная проверка условий МФЦ/i),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('Ипотечное жильё требует проверки юристом.'),
     ).toBeInTheDocument();
@@ -109,7 +110,7 @@ describe('HomePage', () => {
     );
     renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: /Получить оценку/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
 
     expect(estimateMock).toHaveBeenCalledWith({
       totalDebtAmount: null,
@@ -125,16 +126,18 @@ describe('HomePage', () => {
     estimateMock.mockRejectedValue(new Error('down'));
     renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: /Получить оценку/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/недоступна/i);
   });
 
-  it('shows the Gosuslugi-sourced context with citation', () => {
+  it('links to the official Gosuslugi source', () => {
     renderPage();
 
-    expect(screen.getByText(/О банкротстве физических лиц/)).toBeInTheDocument();
-    const source = screen.getByRole('link', { name: /Госуслуги/i });
+    expect(
+      screen.getByText(/Что нужно проверить перед обращением в МФЦ/),
+    ).toBeInTheDocument();
+    const source = screen.getByRole('link', { name: /Открыть официальную инструкцию/i });
     expect(source).toHaveAttribute(
       'href',
       'https://www.gosuslugi.ru/life/details/bankruptcy_of_individuals',
