@@ -15,7 +15,7 @@ export default function AppLayout() {
     <div className="app-shell">
       <header className="app-header">
         <Link to="/applications" className="brand">
-          Adiaphora
+          Адиафора
         </Link>
         <nav className="app-nav">
           <NavLink to="/applications">Мои дела</NavLink>

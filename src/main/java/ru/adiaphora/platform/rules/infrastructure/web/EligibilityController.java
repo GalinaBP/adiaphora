@@ -49,7 +49,11 @@ class EligibilityController {
             Boolean ownsMortgagedHome,
             Boolean previousBankruptcy,
             @Pattern(regexp = "none|sold|gifted", message = "допустимые значения: none, sold, gifted")
-            String recentPropertyTransaction) {
+            String recentPropertyTransaction,
+            @Pattern(regexp = "enforcement_ended|pensioner|child_benefit|long_enforcement|none",
+                    message = "допустимые значения: enforcement_ended, pensioner, child_benefit, "
+                            + "long_enforcement, none")
+            String mfcStatutoryGround) {
 
         Map<String, String> toAnswers() {
             Map<String, String> answers = new LinkedHashMap<>();
@@ -67,6 +71,9 @@ class EligibilityController {
             }
             if (recentPropertyTransaction != null) {
                 answers.put(RuleInputs.RECENT_PROPERTY_TRANSACTION, recentPropertyTransaction);
+            }
+            if (mfcStatutoryGround != null) {
+                answers.put(RuleInputs.MFC_STATUTORY_GROUND, mfcStatutoryGround);
             }
             return answers;
         }

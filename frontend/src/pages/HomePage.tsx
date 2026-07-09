@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 
 import { ApiError } from '../api/client';
 import { eligibilityApi } from '../api/endpoints';
-import type { EligibilityEstimateResponse } from '../api/types';
+import type {
+  EligibilityEstimateRequest,
+  EligibilityEstimateResponse,
+} from '../api/types';
 import './HomePage.css';
 
 type VerdictCopy = {
@@ -72,6 +75,7 @@ export default function HomePage() {
   const [mortgage, setMortgage] = useState('');
   const [priorBankruptcy, setPriorBankruptcy] = useState('');
   const [propertyTx, setPropertyTx] = useState('');
+  const [statutoryGround, setStatutoryGround] = useState('');
   const [result, setResult] = useState<EligibilityEstimateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,6 +96,12 @@ export default function HomePage() {
           propertyTx === ''
             ? null
             : (propertyTx as 'none' | 'sold' | 'gifted'),
+        mfcStatutoryGround:
+          statutoryGround === ''
+            ? null
+            : (statutoryGround as NonNullable<
+                EligibilityEstimateRequest['mfcStatutoryGround']
+              >),
       });
       setResult(estimate);
     } catch (caught) {
@@ -112,7 +122,7 @@ export default function HomePage() {
     <div className="landing-page">
       <header className="home-header">
         <div className="home-container home-header-inner">
-          <Link className="home-brand" to="/" aria-label="Adiaphora — главная">
+          <Link className="home-brand" to="/" aria-label="Адиафора — главная">
             <span className="home-brand-mark" aria-hidden="true">
               <svg fill="none" viewBox="0 0 38 38">
                 <path d="M11 27.5 19 8l8 19.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
@@ -120,7 +130,7 @@ export default function HomePage() {
               </svg>
             </span>
             <span>
-              <strong>Adiaphora</strong>
+              <strong>Адиафора</strong>
               <small>Внесудебное банкротство через МФЦ</small>
             </span>
           </Link>
@@ -240,8 +250,20 @@ export default function HomePage() {
                       type="number"
                       value={debt}
                     />
-                    <small>Укажите все известные кредиты, займы, налоги, ЖКХ и другие обязательства</small>
+                    <small>Размер долга определяется на дату подачи заявления в МФЦ</small>
                   </label>
+
+                  <details className="home-debt-breakdown home-field-wide">
+                    <summary>Из чего складывается общая сумма долга?</summary>
+                    <ul>
+                      <li>займы и кредиты, включая проценты по ним — точную сумму долга можно запросить у кредитора;</li>
+                      <li>налоги и сборы — задолженность можно проверить на сайте ФНС или на Госуслугах;</li>
+                      <li>штрафы — автоштрафы отображаются на Госуслугах и сайте ГИБДД;</li>
+                      <li>платежи по договорам поручительства, включая суммы, по которым нет просрочки платежей;</li>
+                      <li>судебная задолженность — её можно проверить в личном кабинете на Госуслугах или на сайте ФССП;</li>
+                      <li>алименты — их запросят для учёта в общей сумме долга при подаче заявления; списать долги по алиментам нельзя.</li>
+                    </ul>
+                  </details>
 
                   <label className="home-field">
                     <span>Есть ли у вас регулярный доход?</span>
@@ -278,6 +300,30 @@ export default function HomePage() {
                       <option value="sold">Да — продавал(а)</option>
                       <option value="gifted">Да — дарил(а)</option>
                     </select>
+                  </label>
+
+                  <label className="home-field home-field-wide">
+                    <span>Подходите ли вы под одну из категорий для внесудебного банкротства?</span>
+                    <select
+                      value={statutoryGround}
+                      onChange={(event: ChangeEvent<HTMLSelectElement>) => setStatutoryGround(event.target.value)}
+                    >
+                      <option value="">— выберите —</option>
+                      <option value="enforcement_ended">
+                        Исполнительное производство окончено: имущества для взыскания нет, документ вернули взыскателю
+                      </option>
+                      <option value="pensioner">
+                        Я пенсионер, пенсия — основной доход, есть неисполненный исполнительный документ, имущества нет
+                      </option>
+                      <option value="child_benefit">
+                        Получаю пособие в связи с рождением и воспитанием ребёнка, есть неисполненный исполнительный документ, имущества нет
+                      </option>
+                      <option value="long_enforcement">
+                        Долг взыскивается с меня уже 7 лет и более, но документ полностью не исполнен
+                      </option>
+                      <option value="none">Ни одна из ситуаций не относится ко мне</option>
+                    </select>
+                    <small>Для внесудебного банкротства нужно подходить хотя бы под одну из категорий</small>
                   </label>
                 </div>
 
@@ -495,7 +541,7 @@ export default function HomePage() {
               </details>
               <details>
                 <summary>Сервис гарантирует принятие заявления?</summary>
-                <p>Нет. Adiaphora помогает проверить сведения и подготовиться, но решение зависит от официальной процедуры и данных государственных систем.</p>
+                <p>Нет. Адиафора помогает проверить сведения и подготовиться, но решение зависит от официальной процедуры и данных государственных систем.</p>
               </details>
             </div>
           </div>
@@ -524,7 +570,7 @@ export default function HomePage() {
                 <path d="M14.2 21h9.6" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
               </svg>
             </span>
-            <span><strong>Adiaphora</strong><small>Внесудебное банкротство через МФЦ</small></span>
+            <span><strong>Адиафора</strong><small>Внесудебное банкротство через МФЦ</small></span>
           </div>
           <p>Информационный сервис для подготовки к внесудебной процедуре. Не является юридической консультацией и не гарантирует принятие заявления.</p>
           <div className="home-footer-links">

@@ -19,6 +19,15 @@ public final class RuleInputs {
     public static final String OWNS_MORTGAGED_HOME = "ownsMortgagedHome";
     public static final String PREVIOUS_BANKRUPTCY = "previousBankruptcy";
     public static final String RECENT_PROPERTY_TRANSACTION = "recentPropertyTransaction";
+    public static final String MFC_STATUTORY_GROUND = "mfcStatutoryGround";
+
+    // Answer values for the statutory-ground question: the four grounds recognised for the
+    // extrajudicial (MFC) procedure, plus "none of these".
+    public static final String GROUND_ENFORCEMENT_ENDED = "enforcement_ended";
+    public static final String GROUND_PENSIONER = "pensioner";
+    public static final String GROUND_CHILD_BENEFIT = "child_benefit";
+    public static final String GROUND_LONG_ENFORCEMENT = "long_enforcement";
+    public static final String GROUND_NONE = "none";
 
     // Placeholder MFC (extrajudicial) debt bounds in RUB.
     public static final BigDecimal MFC_LOWER_BOUND = new BigDecimal("25000");

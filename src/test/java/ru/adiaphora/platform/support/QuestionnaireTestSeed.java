@@ -35,10 +35,17 @@ public final class QuestionnaireTestSeed {
         insertQuestion(jdbc, versionId, "ownsMortgagedHome", "BOOLEAN", 3);
         insertQuestion(jdbc, versionId, "previousBankruptcy", "BOOLEAN", 4);
         String choiceId = insertQuestion(jdbc, versionId, "recentPropertyTransaction", "SINGLE_CHOICE", 5);
+        insertOptions(jdbc, choiceId, "none", "sold", "gifted");
+        String groundId = insertQuestion(jdbc, versionId, "mfcStatutoryGround", "SINGLE_CHOICE", 6);
+        insertOptions(jdbc, groundId, "enforcement_ended", "pensioner", "child_benefit",
+                "long_enforcement", "none");
+    }
+
+    private static void insertOptions(JdbcTemplate jdbc, String questionId, String... values) {
         int order = 1;
-        for (String option : new String[]{"none", "sold", "gifted"}) {
+        for (String option : values) {
             jdbc.update("INSERT INTO question_options (id, question_definition_id, value, label, display_order) "
-                    + "VALUES (UNHEX(?), UNHEX(?), ?, ?, ?)", newId(), choiceId, option, option, order++);
+                    + "VALUES (UNHEX(?), UNHEX(?), ?, ?, ?)", newId(), questionId, option, option, order++);
         }
     }
 

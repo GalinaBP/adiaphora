@@ -627,6 +627,32 @@
   font-weight: 500;
 }
 
+.home-debt-breakdown {
+  margin-top: -10px;
+  padding: 12px 16px;
+  border: 1px solid #dfeae6;
+  border-radius: 11px;
+  background: #f6faf8;
+}
+
+.home-debt-breakdown summary {
+  color: var(--home-accent-dark);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-debt-breakdown ul {
+  margin: 10px 0 2px;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  color: #52655f;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 .home-form-footer {
   display: flex;
   align-items: center;

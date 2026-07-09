@@ -11,9 +11,11 @@ import ru.adiaphora.platform.rules.domain.rules.DebtAmountMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcLowerBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcUpperBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MortgageManualReviewRule;
+import ru.adiaphora.platform.rules.domain.rules.NoStatutoryGroundManualReviewRule;
 import ru.adiaphora.platform.rules.domain.rules.PaymentAbilityMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.PreviousBankruptcyManualReviewRule;
 import ru.adiaphora.platform.rules.domain.rules.RecentPropertyTransactionManualReviewRule;
+import ru.adiaphora.platform.rules.domain.rules.StatutoryGroundMissingRule;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,11 +33,13 @@ class RuleEngineTest {
         return List.of(
                 new DebtAmountMissingRule(),
                 new PaymentAbilityMissingRule(),
+                new StatutoryGroundMissingRule(),
                 new MfcLowerBoundRule(),
                 new MfcUpperBoundRule(),
                 new MortgageManualReviewRule(),
                 new PreviousBankruptcyManualReviewRule(),
-                new RecentPropertyTransactionManualReviewRule());
+                new RecentPropertyTransactionManualReviewRule(),
+                new NoStatutoryGroundManualReviewRule());
     }
 
     private final RuleEngine engine = new RuleEngine(allRules());
@@ -52,6 +56,7 @@ class RuleEngineTest {
         answers.put("ownsMortgagedHome", "false");
         answers.put("previousBankruptcy", "false");
         answers.put("recentPropertyTransaction", "none");
+        answers.put("mfcStatutoryGround", "enforcement_ended");
         return answers;
     }
 
@@ -93,8 +98,9 @@ class RuleEngineTest {
 
     @ParameterizedTest(name = "missing {0} -> {1}")
     @CsvSource({
-            "totalDebtAmount,  APPLICATION-DEBT-AMOUNT-MISSING",
-            "hasRegularIncome, APPLICATION-PAYMENT-ABILITY-MISSING"
+            "totalDebtAmount,   APPLICATION-DEBT-AMOUNT-MISSING",
+            "hasRegularIncome,  APPLICATION-PAYMENT-ABILITY-MISSING",
+            "mfcStatutoryGround, APPLICATION-STATUTORY-GROUND-MISSING"
     })
     void missingAnswerRequiresInformation(String questionCode, String expectedRuleCode) {
         Map<String, String> answers = baseAnswers();
@@ -110,7 +116,8 @@ class RuleEngineTest {
             "ownsMortgagedHome,         true,   MANUAL-REVIEW-MORTGAGE",
             "previousBankruptcy,        true,   MANUAL-REVIEW-PREVIOUS-BANKRUPTCY",
             "recentPropertyTransaction, sold,   MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
-            "recentPropertyTransaction, gifted, MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION"
+            "recentPropertyTransaction, gifted, MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
+            "mfcStatutoryGround,        none,   MANUAL-REVIEW-NO-STATUTORY-GROUND"
     })
     void flaggedAnswerForcesManualReview(String questionCode, String answer, String expectedRuleCode) {
         Map<String, String> answers = baseAnswers();
@@ -120,6 +127,26 @@ class RuleEngineTest {
         assertThat(result.manualReviewRequired()).isTrue();
         assertThat(result.triggered())
                 .anyMatch(e -> e.ruleCode().equals(expectedRuleCode));
+    }
+
+    /**
+     * Each statutory ground recognised for the extrajudicial procedure keeps a clean in-bounds case
+     * on the MFC route. Expected results pending lawyer approval (placeholder grounds).
+     */
+    @ParameterizedTest(name = "ground {0} -> MFC_PRELIMINARY")
+    @CsvSource({
+            "enforcement_ended",
+            "pensioner",
+            "child_benefit",
+            "long_enforcement"
+    })
+    void recognisedStatutoryGroundKeepsMfcRoute(String ground) {
+        Map<String, String> answers = baseAnswers();
+        answers.put("mfcStatutoryGround", ground);
+        EngineResult result = evaluate(answers);
+        assertThat(result.route()).isEqualTo(BankruptcyRoute.MFC_PRELIMINARY);
+        assertThat(result.manualReviewRequired()).isFalse();
+        assertThat(result.missingInformation()).isEmpty();
     }
 
     @Test

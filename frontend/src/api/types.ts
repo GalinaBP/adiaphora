@@ -245,6 +245,13 @@ export interface EligibilityEstimateRequest {
   ownsMortgagedHome?: boolean | null;
   previousBankruptcy?: boolean | null;
   recentPropertyTransaction?: 'none' | 'sold' | 'gifted' | null;
+  mfcStatutoryGround?:
+    | 'enforcement_ended'
+    | 'pensioner'
+    | 'child_benefit'
+    | 'long_enforcement'
+    | 'none'
+    | null;
 }
 
 export interface EligibilityEstimateResponse {

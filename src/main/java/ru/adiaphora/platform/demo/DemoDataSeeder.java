@@ -122,6 +122,7 @@ class DemoDataSeeder implements ApplicationRunner {
         answers.put("ownsMortgagedHome", "false");
         answers.put("previousBankruptcy", "false");
         answers.put("recentPropertyTransaction", "none");
+        answers.put("mfcStatutoryGround", "enforcement_ended");
         return answers;
     }
 
