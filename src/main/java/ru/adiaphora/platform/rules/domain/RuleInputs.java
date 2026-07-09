@@ -22,9 +22,9 @@ public final class RuleInputs {
     public static final String MFC_STATUTORY_GROUND = "mfcStatutoryGround";
 
     // Answer values for the statutory-ground question: the four grounds recognised for the
-    // extrajudicial (MFC) procedure, plus "none of these".
+    // extrajudicial (MFC) procedure (127-ФЗ, ст. 223.2), plus "none of these".
     public static final String GROUND_ENFORCEMENT_ENDED = "enforcement_ended";
-    public static final String GROUND_PENSIONER = "pensioner";
+    public static final String GROUND_PENSIONER_OR_SVO = "pensioner_or_svo";
     public static final String GROUND_CHILD_BENEFIT = "child_benefit";
     public static final String GROUND_LONG_ENFORCEMENT = "long_enforcement";
     public static final String GROUND_NONE = "none";

@@ -653,6 +653,31 @@
   line-height: 1.5;
 }
 
+.home-bki-guide {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 1px solid #dfeae6;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.home-bki-guide summary {
+  color: var(--home-accent-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-bki-guide ol {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+}
+
+.home-bki-guide p {
+  margin: 8px 0 2px;
+}
+
 .home-form-footer {
   display: flex;
   align-items: center;

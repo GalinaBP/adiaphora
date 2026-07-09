@@ -247,7 +247,7 @@ export interface EligibilityEstimateRequest {
   recentPropertyTransaction?: 'none' | 'sold' | 'gifted' | null;
   mfcStatutoryGround?:
     | 'enforcement_ended'
-    | 'pensioner'
+    | 'pensioner_or_svo'
     | 'child_benefit'
     | 'long_enforcement'
     | 'none'
