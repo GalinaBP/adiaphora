@@ -1100,6 +1100,10 @@ components:
         recentPropertyTransaction:
           type: string
           enum: [none, sold, gifted]
+        mfcStatutoryGround:
+          type: string
+          description: Statutory category for the extrajudicial (MFC) procedure (127-ФЗ, ст. 223.2).
+          enum: [enforcement_ended, pensioner, child_benefit, svo_participant, long_enforcement, none, unknown]
 
     EligibilityEstimateResponse:
       type: object

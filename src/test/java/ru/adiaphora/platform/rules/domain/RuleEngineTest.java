@@ -117,7 +117,8 @@ class RuleEngineTest {
             "previousBankruptcy,        true,   MANUAL-REVIEW-PREVIOUS-BANKRUPTCY",
             "recentPropertyTransaction, sold,   MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
             "recentPropertyTransaction, gifted, MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
-            "mfcStatutoryGround,        none,   MANUAL-REVIEW-NO-STATUTORY-GROUND"
+            "mfcStatutoryGround,        none,   MANUAL-REVIEW-NO-STATUTORY-GROUND",
+            "mfcStatutoryGround,        unknown, MANUAL-REVIEW-NO-STATUTORY-GROUND"
     })
     void flaggedAnswerForcesManualReview(String questionCode, String answer, String expectedRuleCode) {
         Map<String, String> answers = baseAnswers();
@@ -136,8 +137,9 @@ class RuleEngineTest {
     @ParameterizedTest(name = "ground {0} -> MFC_PRELIMINARY")
     @CsvSource({
             "enforcement_ended",
-            "pensioner_or_svo",
+            "pensioner",
             "child_benefit",
+            "svo_participant",
             "long_enforcement"
     })
     void recognisedStatutoryGroundKeepsMfcRoute(String ground) {

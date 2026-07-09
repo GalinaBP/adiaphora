@@ -53,25 +53,25 @@ class QuestionnaireSeedData implements ApplicationRunner {
                 new QuestionSectionEntity(UUID.randomUUID(), versionId, "assets", "Имущество", 2),
                 new QuestionSectionEntity(UUID.randomUUID(), versionId, "personal", "Личные данные", 3)));
 
+        // The debt amount and the statutory category are the two gating questions and go first.
         List<QuestionDefinitionEntity> defs = new ArrayList<>();
         defs.add(question(versionId, "debts", "totalDebtAmount", QuestionType.MONEY,
                 "Общая сумма долгов (₽)", true, 1));
+        QuestionDefinitionEntity statutoryGround = question(versionId, "debts", "mfcStatutoryGround",
+                QuestionType.SINGLE_CHOICE, "К какой категории вы относитесь?", true, 2);
+        defs.add(statutoryGround);
         defs.add(question(versionId, "debts", "hasRegularIncome", QuestionType.BOOLEAN,
-                "Есть ли у вас регулярный доход?", true, 2));
+                "Есть ли у вас регулярный доход?", true, 3));
         defs.add(question(versionId, "debts", "monthlyIncome", QuestionType.MONEY,
-                "Примерный ежемесячный доход (₽)", false, 3));
+                "Примерный ежемесячный доход (₽)", false, 4));
         defs.add(question(versionId, "assets", "ownsMortgagedHome", QuestionType.BOOLEAN,
-                "Есть ли у вас жильё в ипотеке?", true, 4));
+                "Есть ли у вас жильё в ипотеке?", true, 5));
         defs.add(question(versionId, "assets", "previousBankruptcy", QuestionType.BOOLEAN,
-                "Признавались ли вы банкротом ранее?", true, 5));
+                "Признавались ли вы банкротом ранее?", true, 6));
 
         QuestionDefinitionEntity propertyTx = question(versionId, "assets", "recentPropertyTransaction",
-                QuestionType.SINGLE_CHOICE, "Сделки с имуществом за последние 3 года", true, 6);
+                QuestionType.SINGLE_CHOICE, "Сделки с имуществом за последние 3 года", true, 7);
         defs.add(propertyTx);
-        QuestionDefinitionEntity statutoryGround = question(versionId, "debts", "mfcStatutoryGround",
-                QuestionType.SINGLE_CHOICE,
-                "Подходите ли вы под одну из категорий для внесудебного банкротства?", true, 7);
-        defs.add(statutoryGround);
         defs.add(question(versionId, "personal", "employmentStatus", QuestionType.SINGLE_CHOICE,
                 "Текущая занятость", false, 8));
 
@@ -84,19 +84,26 @@ class QuestionnaireSeedData implements ApplicationRunner {
 
         options.saveAll(List.of(
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "enforcement_ended",
-                        "Исполнительное производство окончено из-за отсутствия имущества, документ вернули "
-                                + "взыскателю, новых производств после этого нет", 1),
-                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "pensioner_or_svo",
-                        "Я пенсионер или участник СВО, исполнительный документ выдан более года назад, "
-                                + "предъявлен и не исполнен, имущества для взыскания нет", 2),
+                        "Обычный должник: пристав окончил исполнительное производство, потому что имущество "
+                                + "или деньги не нашли (п. 4 ч. 1 ст. 46 Закона об исполнительном производстве), "
+                                + "и новых производств о взыскании денег после этого не возбуждалось", 1),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "pensioner",
+                        "Пенсионер: пенсия — основной доход, исполнительный документ предъявлен к исполнению "
+                                + "не менее года назад, долг не погашен, имущества для продажи нет", 2),
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "child_benefit",
-                        "Получаю ежемесячное пособие в связи с рождением и воспитанием ребёнка, исполнительный "
-                                + "документ выдан более года назад, предъявлен и не исполнен, имущества нет", 3),
+                        "Получатель ежемесячного пособия в связи с рождением и воспитанием ребёнка: "
+                                + "исполнительный документ предъявлен не менее года назад, долг не погашен, "
+                                + "имущества нет", 3),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "svo_participant",
+                        "Участник специальной военной операции с подтверждающим документом: исполнительный "
+                                + "документ предъявлен не менее года назад, долг не погашен, имущества нет", 4),
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "long_enforcement",
-                        "Исполнительный документ имущественного характера выдан более 7 лет назад, предъявлен "
-                                + "и до сих пор не исполнен полностью", 4),
+                        "Долг взыскивают уже не менее семи лет: исполнительный документ выдан не менее семи "
+                                + "лет назад, предъявлялся к взысканию и до сих пор не исполнен полностью", 5),
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "none",
-                        "Ни одна из ситуаций не относится ко мне", 5)));
+                        "Ни одна категория не подходит", 6),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "unknown",
+                        "Не знаю, нужно проверить постановления приставов и документы", 7)));
 
         UUID employmentId = defs.get(defs.size() - 1).getId();
         options.saveAll(List.of(

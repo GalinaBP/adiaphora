@@ -33,23 +33,27 @@ function renderPage() {
   );
 }
 
+// Step 1 holds only the two gating questions (debt amount + statutory category); the
+// remaining questions live on step 2 behind the "Продолжить" button.
 async function fillAndSubmit() {
   await userEvent.type(screen.getByLabelText(/Общая сумма долгов/), '350000');
+  await userEvent.click(screen.getByRole('radio', { name: /Обычный должник/ }));
+  await userEvent.click(screen.getByRole('button', { name: /Продолжить/ }));
   await userEvent.selectOptions(screen.getByLabelText(/регулярный доход/), 'yes');
   await userEvent.selectOptions(screen.getByLabelText(/жильё в ипотеке/), 'no');
   await userEvent.selectOptions(screen.getByLabelText(/банкротом ранее/), 'no');
   await userEvent.selectOptions(screen.getByLabelText(/Продавали или дарили имущество/), 'none');
-  await userEvent.selectOptions(
-    screen.getByLabelText(/одну из категорий для внесудебного банкротства/),
-    'enforcement_ended',
-  );
   await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
+}
+
+async function skipToStepTwo() {
+  await userEvent.click(screen.getByRole('button', { name: /Продолжить/ }));
 }
 
 describe('HomePage', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('submits the five inputs and shows an eligible estimate with disclaimer and CTA', async () => {
+  it('submits the two-step answers and shows an eligible estimate with disclaimer and CTA', async () => {
     estimateMock.mockResolvedValue(response());
     renderPage();
 
@@ -70,6 +74,17 @@ describe('HomePage', () => {
     expect(
       screen.getByRole('link', { name: /Продолжить проверку условий МФЦ/i }),
     ).toHaveAttribute('href', '/register');
+  });
+
+  it('keeps step-1 answers when navigating back from step 2', async () => {
+    renderPage();
+
+    await userEvent.click(screen.getByRole('radio', { name: /Пенсионер/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Продолжить/ }));
+    expect(screen.getByLabelText(/регулярный доход/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Назад/ }));
+    expect(screen.getByRole('radio', { name: /Пенсионер/ })).toBeChecked();
   });
 
   it('shows the out-of-range verdict', async () => {
@@ -115,6 +130,7 @@ describe('HomePage', () => {
     );
     renderPage();
 
+    await skipToStepTwo();
     await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
 
     expect(estimateMock).toHaveBeenCalledWith({
@@ -132,6 +148,7 @@ describe('HomePage', () => {
     estimateMock.mockRejectedValue(new Error('down'));
     renderPage();
 
+    await skipToStepTwo();
     await userEvent.click(screen.getByRole('button', { name: /Проверить условия МФЦ/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/недоступна/i);

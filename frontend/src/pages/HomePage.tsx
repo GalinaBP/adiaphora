@@ -1,11 +1,11 @@
-import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ApiError } from '../api/client';
 import { eligibilityApi } from '../api/endpoints';
 import type {
-  EligibilityEstimateRequest,
   EligibilityEstimateResponse,
+  MfcStatutoryGround,
 } from '../api/types';
 import './HomePage.css';
 
@@ -37,6 +37,65 @@ const VERDICT_TEXT: Record<EligibilityEstimateResponse['verdict'], VerdictCopy> 
     tone: 'neutral',
   },
 };
+
+// Statutory categories for the extrajudicial (MFC) procedure, worded after the lawyer-provided
+// «Часть 1. К какой категории вы относитесь?» source document. Placeholder pending legal review.
+const CATEGORY_OPTIONS: Array<{
+  value: MfcStatutoryGround;
+  title: string;
+  description: string;
+}> = [
+  {
+    value: 'enforcement_ended',
+    title: 'Обычный должник',
+    description:
+      'Пристав окончил исполнительное производство, потому что у вас не нашли имущество или деньги '
+      + '(п. 4 ч. 1 ст. 46 Закона об исполнительном производстве), и после этого новых производств '
+      + 'о взыскании денег не возбуждалось.',
+  },
+  {
+    value: 'pensioner',
+    title: 'Пенсионер',
+    description:
+      'Пенсия — ваш основной доход; исполнительный документ предъявлен к исполнению не менее года '
+      + 'назад, долг полностью не погашен, имущества для продажи нет.',
+  },
+  {
+    value: 'child_benefit',
+    title: 'Получатель ежемесячного пособия на ребёнка',
+    description:
+      'Вы получаете ежемесячное пособие в связи с рождением и воспитанием ребёнка; исполнительный '
+      + 'документ предъявлен не менее года назад, долг не погашен, имущества нет.',
+  },
+  {
+    value: 'svo_participant',
+    title: 'Участник специальной военной операции',
+    description:
+      'У вас есть документ, подтверждающий участие в СВО; исполнительный документ предъявлен '
+      + 'не менее года назад, долг не погашен, имущества нет.',
+  },
+  {
+    value: 'long_enforcement',
+    title: 'Долг взыскивают уже не менее семи лет',
+    description:
+      'Исполнительный документ выдан не менее семи лет назад, предъявлялся к взысканию '
+      + '(приставам, в банк или работодателю), и долг до сих пор полностью не погашен.',
+  },
+  {
+    value: 'none',
+    title: 'Ни одна категория не подходит',
+    description:
+      'У вас не было исполнительных производств, производство началось менее года назад '
+      + 'или перечисленные ситуации не о вас.',
+  },
+  {
+    value: 'unknown',
+    title: 'Не знаю, нужно проверить документы',
+    description:
+      'Нужно посмотреть постановления судебного пристава, исполнительные документы и даты — '
+      + 'мы подскажем, что проверить.',
+  },
+];
 
 function Icon({ children, size = 24 }: { children: ReactNode; size?: number }) {
   return (
@@ -70,6 +129,7 @@ function ArrowIcon() {
 }
 
 export default function HomePage() {
+  const [step, setStep] = useState<1 | 2>(1);
   const [debt, setDebt] = useState('');
   const [income, setIncome] = useState('');
   const [mortgage, setMortgage] = useState('');
@@ -79,6 +139,17 @@ export default function HomePage() {
   const [result, setResult] = useState<EligibilityEstimateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Switching steps changes the card height drastically; keep the form in view.
+  const formRef = useRef<HTMLFormElement>(null);
+  const initialRender = useRef(true);
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return;
+    }
+    formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }, [step]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -97,11 +168,7 @@ export default function HomePage() {
             ? null
             : (propertyTx as 'none' | 'sold' | 'gifted'),
         mfcStatutoryGround:
-          statutoryGround === ''
-            ? null
-            : (statutoryGround as NonNullable<
-                EligibilityEstimateRequest['mfcStatutoryGround']
-              >),
+          statutoryGround === '' ? null : (statutoryGround as MfcStatutoryGround),
       });
       setResult(estimate);
     } catch (caught) {
@@ -228,15 +295,21 @@ export default function HomePage() {
             </div>
 
             <div className="home-check-grid">
-              <form className="home-check-card" onSubmit={submit}>
+              <form className="home-check-card" onSubmit={submit} ref={formRef}>
                 <div className="home-form-intro">
-                  <span className="home-form-number">01</span>
+                  <span className="home-form-number">{step === 1 ? '01' : '02'}</span>
                   <div>
-                    <h3>Расскажите о своей ситуации</h3>
-                    <p>Можно пропустить поле, если пока не знаете точный ответ.</p>
+                    <h3>{step === 1 ? 'Сумма долга и ваша категория' : 'Несколько уточняющих вопросов'}</h3>
+                    <p>
+                      {step === 1
+                        ? 'Это два главных условия внесудебного банкротства. Шаг 1 из 2.'
+                        : 'Они помогают заметить обстоятельства, требующие проверки. Шаг 2 из 2.'}
+                      {' '}Можно пропустить поле, если пока не знаете точный ответ.
+                    </p>
                   </div>
                 </div>
 
+                {step === 1 && (
                 <div className="home-fields-grid">
                   <label className="home-field home-field-wide">
                     <span>Общая сумма долгов (₽)</span>
@@ -280,6 +353,38 @@ export default function HomePage() {
                     </ul>
                   </details>
 
+                  <fieldset className="home-category-fieldset home-field-wide">
+                    <legend>К какой категории вы относитесь?</legend>
+                    <p className="home-category-hint">
+                      Для внесудебного банкротства нужно подходить хотя бы под одну категорию.
+                      Если подходят несколько — выберите любую из них.
+                    </p>
+                    <div className="home-category-list">
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <label
+                          className={`home-category-option${statutoryGround === option.value ? ' selected' : ''}`}
+                          key={option.value}
+                        >
+                          <input
+                            checked={statutoryGround === option.value}
+                            name="statutoryGround"
+                            onChange={(event: ChangeEvent<HTMLInputElement>) => setStatutoryGround(event.target.value)}
+                            type="radio"
+                            value={option.value}
+                          />
+                          <span>
+                            <strong>{option.title}</strong>
+                            <small>{option.description}</small>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
+                )}
+
+                {step === 2 && (
+                <div className="home-fields-grid">
                   <label className="home-field">
                     <span>Есть ли у вас регулярный доход?</span>
                     <select value={income} onChange={(event: ChangeEvent<HTMLSelectElement>) => setIncome(event.target.value)}>
@@ -316,37 +421,29 @@ export default function HomePage() {
                       <option value="gifted">Да — дарил(а)</option>
                     </select>
                   </label>
-
-                  <label className="home-field home-field-wide">
-                    <span>Подходите ли вы под одну из категорий для внесудебного банкротства?</span>
-                    <select
-                      value={statutoryGround}
-                      onChange={(event: ChangeEvent<HTMLSelectElement>) => setStatutoryGround(event.target.value)}
-                    >
-                      <option value="">— выберите —</option>
-                      <option value="enforcement_ended">
-                        Исполнительное производство окончено из-за отсутствия имущества, документ вернули взыскателю, новых производств после этого нет
-                      </option>
-                      <option value="pensioner_or_svo">
-                        Я пенсионер или участник СВО, исполнительный документ выдан более года назад, предъявлен и не исполнен, имущества для взыскания нет
-                      </option>
-                      <option value="child_benefit">
-                        Получаю ежемесячное пособие в связи с рождением и воспитанием ребёнка, исполнительный документ выдан более года назад, предъявлен и не исполнен, имущества нет
-                      </option>
-                      <option value="long_enforcement">
-                        Исполнительный документ имущественного характера выдан более 7 лет назад, предъявлен и до сих пор не исполнен полностью
-                      </option>
-                      <option value="none">Ни одна из ситуаций не относится ко мне</option>
-                    </select>
-                    <small>Для внесудебного банкротства нужно подходить хотя бы под одну из категорий</small>
-                  </label>
                 </div>
+                )}
 
                 <div className="home-form-footer">
-                  <button className="home-button" disabled={busy} type="submit">
-                    {busy ? 'Проверяем…' : 'Проверить условия МФЦ'}
-                    {!busy && <ArrowIcon />}
-                  </button>
+                  {step === 1 ? (
+                    <button className="home-button" onClick={() => setStep(2)} type="button">
+                      Продолжить <ArrowIcon />
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="home-button home-button-secondary"
+                        onClick={() => setStep(1)}
+                        type="button"
+                      >
+                        Назад
+                      </button>
+                      <button className="home-button" disabled={busy} type="submit">
+                        {busy ? 'Проверяем…' : 'Проверить условия МФЦ'}
+                        {!busy && <ArrowIcon />}
+                      </button>
+                    </>
+                  )}
                   <p>
                     <Icon size={18}>
                       <path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v10H6V10Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
