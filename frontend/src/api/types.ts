@@ -239,19 +239,22 @@ export type EligibilityVerdict =
   | 'MANUAL_REVIEW'
   | 'NEEDS_INFORMATION';
 
+export type MfcStatutoryGround =
+  | 'enforcement_ended'
+  | 'pensioner'
+  | 'child_benefit'
+  | 'svo_participant'
+  | 'long_enforcement'
+  | 'none'
+  | 'unknown';
+
 export interface EligibilityEstimateRequest {
   totalDebtAmount?: number | null;
   hasRegularIncome?: boolean | null;
   ownsMortgagedHome?: boolean | null;
   previousBankruptcy?: boolean | null;
   recentPropertyTransaction?: 'none' | 'sold' | 'gifted' | null;
-  mfcStatutoryGround?:
-    | 'enforcement_ended'
-    | 'pensioner_or_svo'
-    | 'child_benefit'
-    | 'long_enforcement'
-    | 'none'
-    | null;
+  mfcStatutoryGround?: MfcStatutoryGround | null;
 }
 
 export interface EligibilityEstimateResponse {
