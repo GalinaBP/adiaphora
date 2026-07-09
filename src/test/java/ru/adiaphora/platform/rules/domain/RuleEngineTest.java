@@ -136,7 +136,7 @@ class RuleEngineTest {
     @ParameterizedTest(name = "ground {0} -> MFC_PRELIMINARY")
     @CsvSource({
             "enforcement_ended",
-            "pensioner",
+            "pensioner_or_svo",
             "child_benefit",
             "long_enforcement"
     })

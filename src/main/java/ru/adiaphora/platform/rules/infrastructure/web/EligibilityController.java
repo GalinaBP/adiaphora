@@ -50,8 +50,8 @@ class EligibilityController {
             Boolean previousBankruptcy,
             @Pattern(regexp = "none|sold|gifted", message = "допустимые значения: none, sold, gifted")
             String recentPropertyTransaction,
-            @Pattern(regexp = "enforcement_ended|pensioner|child_benefit|long_enforcement|none",
-                    message = "допустимые значения: enforcement_ended, pensioner, child_benefit, "
+            @Pattern(regexp = "enforcement_ended|pensioner_or_svo|child_benefit|long_enforcement|none",
+                    message = "допустимые значения: enforcement_ended, pensioner_or_svo, child_benefit, "
                             + "long_enforcement, none")
             String mfcStatutoryGround) {
 

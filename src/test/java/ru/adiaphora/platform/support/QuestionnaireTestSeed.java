@@ -37,7 +37,7 @@ public final class QuestionnaireTestSeed {
         String choiceId = insertQuestion(jdbc, versionId, "recentPropertyTransaction", "SINGLE_CHOICE", 5);
         insertOptions(jdbc, choiceId, "none", "sold", "gifted");
         String groundId = insertQuestion(jdbc, versionId, "mfcStatutoryGround", "SINGLE_CHOICE", 6);
-        insertOptions(jdbc, groundId, "enforcement_ended", "pensioner", "child_benefit",
+        insertOptions(jdbc, groundId, "enforcement_ended", "pensioner_or_svo", "child_benefit",
                 "long_enforcement", "none");
     }
 

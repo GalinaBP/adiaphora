@@ -84,13 +84,17 @@ class QuestionnaireSeedData implements ApplicationRunner {
 
         options.saveAll(List.of(
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "enforcement_ended",
-                        "Исполнительное производство окончено: имущества нет, документ вернули взыскателю", 1),
-                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "pensioner",
-                        "Я пенсионер, пенсия — основной доход, есть неисполненный исполнительный документ", 2),
+                        "Исполнительное производство окончено из-за отсутствия имущества, документ вернули "
+                                + "взыскателю, новых производств после этого нет", 1),
+                new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "pensioner_or_svo",
+                        "Я пенсионер или участник СВО, исполнительный документ выдан более года назад, "
+                                + "предъявлен и не исполнен, имущества для взыскания нет", 2),
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "child_benefit",
-                        "Получаю пособие на ребёнка, есть неисполненный исполнительный документ", 3),
+                        "Получаю ежемесячное пособие в связи с рождением и воспитанием ребёнка, исполнительный "
+                                + "документ выдан более года назад, предъявлен и не исполнен, имущества нет", 3),
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "long_enforcement",
-                        "Долг взыскивается 7 лет и более, документ полностью не исполнен", 4),
+                        "Исполнительный документ имущественного характера выдан более 7 лет назад, предъявлен "
+                                + "и до сих пор не исполнен полностью", 4),
                 new QuestionOptionEntity(UUID.randomUUID(), statutoryGround.getId(), "none",
                         "Ни одна из ситуаций не относится ко мне", 5)));
 
