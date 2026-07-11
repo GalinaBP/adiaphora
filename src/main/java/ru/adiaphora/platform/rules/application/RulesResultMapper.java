@@ -33,6 +33,7 @@ final class RulesResultMapper {
                 evaluation.outcome(),
                 evaluation.severity(),
                 evaluation.userMessage(),
-                evaluation.blocksAutomaticDecision());
+                evaluation.blocksAutomaticDecision(),
+                evaluation.legalBasis());
     }
 }

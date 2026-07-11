@@ -4,16 +4,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.adiaphora.platform.rules.domain.BankruptcyRule;
 import ru.adiaphora.platform.rules.domain.RuleEngine;
+import ru.adiaphora.platform.rules.domain.rules.BailiffsClosedGroundRule;
 import ru.adiaphora.platform.rules.domain.rules.DebtAmountMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcLowerBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcUpperBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MortgageManualReviewRule;
-import ru.adiaphora.platform.rules.domain.rules.NoStatutoryGroundManualReviewRule;
-import ru.adiaphora.platform.rules.domain.rules.PaymentAbilityMissingRule;
-import ru.adiaphora.platform.rules.domain.rules.StatutoryGroundMissingRule;
-import ru.adiaphora.platform.rules.domain.rules.PreviousBankruptcyManualReviewRule;
+import ru.adiaphora.platform.rules.domain.rules.NoStatutoryGroundRule;
+import ru.adiaphora.platform.rules.domain.rules.OldDebtGroundRule;
+import ru.adiaphora.platform.rules.domain.rules.PriorBankruptcyFiveYearRule;
 import ru.adiaphora.platform.rules.domain.rules.RecentPropertyTransactionManualReviewRule;
+import ru.adiaphora.platform.rules.domain.rules.StatutoryGroundsMissingRule;
+import ru.adiaphora.platform.rules.domain.rules.VulnerableCategoryGroundRule;
 
+import java.time.Clock;
 import java.util.List;
 
 /**
@@ -29,18 +32,8 @@ class RulesConfig {
     }
 
     @Bean
-    BankruptcyRule paymentAbilityMissingRule() {
-        return new PaymentAbilityMissingRule();
-    }
-
-    @Bean
-    BankruptcyRule statutoryGroundMissingRule() {
-        return new StatutoryGroundMissingRule();
-    }
-
-    @Bean
-    BankruptcyRule noStatutoryGroundManualReviewRule() {
-        return new NoStatutoryGroundManualReviewRule();
+    BankruptcyRule statutoryGroundsMissingRule() {
+        return new StatutoryGroundsMissingRule();
     }
 
     @Bean
@@ -54,13 +47,33 @@ class RulesConfig {
     }
 
     @Bean
-    BankruptcyRule mortgageManualReviewRule() {
-        return new MortgageManualReviewRule();
+    BankruptcyRule priorBankruptcyFiveYearRule(Clock clock) {
+        return new PriorBankruptcyFiveYearRule(clock);
     }
 
     @Bean
-    BankruptcyRule previousBankruptcyManualReviewRule() {
-        return new PreviousBankruptcyManualReviewRule();
+    BankruptcyRule noStatutoryGroundRule() {
+        return new NoStatutoryGroundRule();
+    }
+
+    @Bean
+    BankruptcyRule bailiffsClosedGroundRule() {
+        return new BailiffsClosedGroundRule();
+    }
+
+    @Bean
+    BankruptcyRule vulnerableCategoryGroundRule() {
+        return new VulnerableCategoryGroundRule();
+    }
+
+    @Bean
+    BankruptcyRule oldDebtGroundRule() {
+        return new OldDebtGroundRule();
+    }
+
+    @Bean
+    BankruptcyRule mortgageManualReviewRule() {
+        return new MortgageManualReviewRule();
     }
 
     @Bean

@@ -1683,3 +1683,110 @@
     padding: 24px;
   }
 }
+
+/* --- Staged eligibility flow (ticket: out-of-court bankruptcy, ст. 223.2 127-ФЗ) --- */
+
+.home-tristate {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.home-tristate legend {
+  padding: 0;
+  margin-bottom: 2px;
+  color: #334a45;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.home-tristate-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-tristate-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid #cfdeda;
+  border-radius: 11px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--home-ink);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.home-tristate-option:hover {
+  border-color: #9fbdb3;
+}
+
+.home-tristate-option.selected {
+  border-color: var(--home-accent);
+  background: #f4faf7;
+}
+
+.home-tristate-option input {
+  accent-color: var(--home-accent);
+}
+
+.home-question-help {
+  border-left: 3px solid #cfdeda;
+  padding-left: 12px;
+}
+
+.home-question-help summary {
+  cursor: pointer;
+  color: #3d6156;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.home-question-help p {
+  margin: 8px 0 0;
+  color: #52655f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.home-result-grounds {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-result-grounds li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.home-result-basis {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.home-result-citations {
+  margin-top: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.home-result-reset {
+  margin-top: 14px;
+}

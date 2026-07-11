@@ -69,12 +69,21 @@ class ManualReviewFlowIntegrationTest extends AbstractIntegrationTest {
                 "hasRegularIncome", QuestionType.BOOLEAN, "Regular income?", null, true, 2, null));
         questions.save(new QuestionDefinitionEntity(UUID.randomUUID(), versionId, "main",
                 "ownsMortgagedHome", QuestionType.BOOLEAN, "Mortgaged home?", null, true, 3, null));
+        questions.save(new QuestionDefinitionEntity(UUID.randomUUID(), versionId, "main",
+                "previousBankruptcy", QuestionType.BOOLEAN, "Previous bankruptcy?", null, true, 4, null));
         UUID groundId = UUID.randomUUID();
         questions.save(new QuestionDefinitionEntity(groundId, versionId, "main",
-                "mfcStatutoryGround", QuestionType.SINGLE_CHOICE, "Statutory ground?", null, true, 4, null));
+                "mfcStatutoryGrounds", QuestionType.MULTIPLE_CHOICE, "Statutory grounds?", null, true, 5, null));
         options.save(new QuestionOptionEntity(UUID.randomUUID(), groundId, "enforcement_ended",
                 "Enforcement ended", 1));
         options.save(new QuestionOptionEntity(UUID.randomUUID(), groundId, "none", "None", 2));
+        UUID bailiffsId = UUID.randomUUID();
+        questions.save(new QuestionDefinitionEntity(bailiffsId, versionId, "main",
+                "bailiffsCaseClosedNoNew", QuestionType.SINGLE_CHOICE, "Bailiffs closed the case?",
+                null, false, 6, null));
+        options.save(new QuestionOptionEntity(UUID.randomUUID(), bailiffsId, "yes", "Yes", 1));
+        options.save(new QuestionOptionEntity(UUID.randomUUID(), bailiffsId, "no", "No", 2));
+        options.save(new QuestionOptionEntity(UUID.randomUUID(), bailiffsId, "not_sure", "Not sure", 3));
     }
 
     @Test
@@ -89,7 +98,9 @@ class ManualReviewFlowIntegrationTest extends AbstractIntegrationTest {
         answer(userToken, applicationId, "totalDebtAmount", "100000");
         answer(userToken, applicationId, "hasRegularIncome", "true");
         answer(userToken, applicationId, "ownsMortgagedHome", "true");
-        answer(userToken, applicationId, "mfcStatutoryGround", "enforcement_ended");
+        answer(userToken, applicationId, "previousBankruptcy", "false");
+        answer(userToken, applicationId, "mfcStatutoryGrounds", "enforcement_ended");
+        answer(userToken, applicationId, "bailiffsCaseClosedNoNew", "yes");
         mockMvc.perform(post("/api/v1/applications/" + applicationId + "/submit")
                 .header(HttpHeaders.AUTHORIZATION, bearer(userToken))).andExpect(status().isNoContent());
 

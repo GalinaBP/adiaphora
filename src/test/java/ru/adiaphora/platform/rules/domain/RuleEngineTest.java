@@ -7,16 +7,21 @@ import ru.adiaphora.platform.application.api.BankruptcyRoute;
 import ru.adiaphora.platform.questionnaire.api.QuestionnaireSnapshot;
 import ru.adiaphora.platform.rules.api.RuleOutcome;
 import ru.adiaphora.platform.rules.api.RuleSeverity;
+import ru.adiaphora.platform.rules.domain.rules.BailiffsClosedGroundRule;
 import ru.adiaphora.platform.rules.domain.rules.DebtAmountMissingRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcLowerBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MfcUpperBoundRule;
 import ru.adiaphora.platform.rules.domain.rules.MortgageManualReviewRule;
-import ru.adiaphora.platform.rules.domain.rules.NoStatutoryGroundManualReviewRule;
-import ru.adiaphora.platform.rules.domain.rules.PaymentAbilityMissingRule;
-import ru.adiaphora.platform.rules.domain.rules.PreviousBankruptcyManualReviewRule;
+import ru.adiaphora.platform.rules.domain.rules.NoStatutoryGroundRule;
+import ru.adiaphora.platform.rules.domain.rules.OldDebtGroundRule;
+import ru.adiaphora.platform.rules.domain.rules.PriorBankruptcyFiveYearRule;
 import ru.adiaphora.platform.rules.domain.rules.RecentPropertyTransactionManualReviewRule;
-import ru.adiaphora.platform.rules.domain.rules.StatutoryGroundMissingRule;
+import ru.adiaphora.platform.rules.domain.rules.StatutoryGroundsMissingRule;
+import ru.adiaphora.platform.rules.domain.rules.VulnerableCategoryGroundRule;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,34 +34,41 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 
 class RuleEngineTest {
 
+    /** Fixed "today" for the 5-year repeat-filing boundary rows: 2026-07-01. */
+    private static final Clock FIXED_CLOCK =
+            Clock.fixed(Instant.parse("2026-07-01T12:00:00Z"), ZoneOffset.UTC);
+
     private static List<BankruptcyRule> allRules() {
         return List.of(
                 new DebtAmountMissingRule(),
-                new PaymentAbilityMissingRule(),
-                new StatutoryGroundMissingRule(),
+                new StatutoryGroundsMissingRule(),
                 new MfcLowerBoundRule(),
                 new MfcUpperBoundRule(),
+                new PriorBankruptcyFiveYearRule(FIXED_CLOCK),
+                new NoStatutoryGroundRule(),
+                new BailiffsClosedGroundRule(),
+                new VulnerableCategoryGroundRule(),
+                new OldDebtGroundRule(),
                 new MortgageManualReviewRule(),
-                new PreviousBankruptcyManualReviewRule(),
-                new RecentPropertyTransactionManualReviewRule(),
-                new NoStatutoryGroundManualReviewRule());
+                new RecentPropertyTransactionManualReviewRule());
     }
 
     private final RuleEngine engine = new RuleEngine(allRules());
 
     private EngineResult evaluate(Map<String, String> answers) {
         return engine.evaluate(new RuleContext(
-                new QuestionnaireSnapshot(UUID.randomUUID(), "v1", answers)));
+                new QuestionnaireSnapshot(UUID.randomUUID(), "v2", answers)));
     }
 
+    /** A clean, fully-answered case on the "bailiffs closed the case" ground. */
     private Map<String, String> baseAnswers() {
         Map<String, String> answers = new HashMap<>();
         answers.put("totalDebtAmount", "100000");
-        answers.put("hasRegularIncome", "true");
-        answers.put("ownsMortgagedHome", "false");
         answers.put("previousBankruptcy", "false");
+        answers.put("mfcStatutoryGrounds", "enforcement_ended");
+        answers.put("bailiffsCaseClosedNoNew", "yes");
+        answers.put("ownsMortgagedHome", "false");
         answers.put("recentPropertyTransaction", "none");
-        answers.put("mfcStatutoryGround", "enforcement_ended");
         return answers;
     }
 
@@ -69,9 +81,10 @@ class RuleEngineTest {
     }
 
     /**
-     * The AI-012 approved boundary cases: bounds are inclusive, so 25 000 and 1 000 000 stay on the
-     * MFC route while 24 999 and 1 000 001 fall outside. Kopeck-precision rows guard the exact edge.
-     * Expected results pending lawyer approval (placeholder thresholds).
+     * The AI-012 approved boundary cases (stage 1 of the eligibility flow, п. 1 ст. 223.2 127-ФЗ):
+     * bounds are inclusive, so 25 000 and 1 000 000 stay on the MFC route while 24 999 and
+     * 1 000 001 fall outside. Kopeck-precision rows guard the exact edge. The amount check is a hard
+     * gate: it decides the route even when later-stage answers are missing.
      */
     @ParameterizedTest(name = "debt {0} -> {1}")
     @CsvSource({
@@ -96,11 +109,51 @@ class RuleEngineTest {
         assertThat(result.missingInformation()).isEmpty();
     }
 
+    /** The amount gate is hard: an out-of-bounds debt decides the route with everything else unanswered. */
+    @Test
+    void amountGateDecidesEvenWithLaterStagesUnanswered() {
+        EngineResult result = evaluate(Map.of("totalDebtAmount", "5000"));
+        assertThat(result.route()).isEqualTo(BankruptcyRoute.NOT_CURRENTLY_RECOMMENDED);
+        assertThat(result.manualReviewRequired()).isFalse();
+    }
+
+    /**
+     * Stage 2 of the eligibility flow: repeat extrajudicial filing is barred for 5 years from the
+     * end of the previous procedure (п. 8 ст. 223.2 127-ФЗ). With a fixed "today" of 2026-07-01 the
+     * bound is inclusive: exactly 5 years ago (2021-07-01) passes, one day later fails.
+     */
+    @ParameterizedTest(name = "previous bankruptcy ended {0} -> {1}")
+    @CsvSource({
+            "2010-01-01, MFC_PRELIMINARY",
+            "2021-06-30, MFC_PRELIMINARY",
+            "2021-07-01, MFC_PRELIMINARY",
+            "2021-07-02, COURT_PRELIMINARY",
+            "2026-06-30, COURT_PRELIMINARY"
+    })
+    void fiveYearRepeatFilingBarBoundaryCases(String endedOn, BankruptcyRoute expectedRoute) {
+        Map<String, String> answers = baseAnswers();
+        answers.put("previousBankruptcy", "true");
+        answers.put("previousBankruptcyEndedOn", endedOn);
+        EngineResult result = evaluate(answers);
+        assertThat(result.route()).isEqualTo(expectedRoute);
+        assertThat(result.manualReviewRequired()).isFalse();
+    }
+
+    @Test
+    void priorBankruptcyWithoutEndDateNeedsInformation() {
+        Map<String, String> answers = baseAnswers();
+        answers.put("previousBankruptcy", "true");
+        EngineResult result = evaluate(answers);
+        assertThat(result.route()).isEqualTo(BankruptcyRoute.INSUFFICIENT_INFORMATION);
+        assertThat(result.missingInformation()).contains("MFC-PRIOR-BANKRUPTCY-5Y");
+    }
+
     @ParameterizedTest(name = "missing {0} -> {1}")
     @CsvSource({
-            "totalDebtAmount,   APPLICATION-DEBT-AMOUNT-MISSING",
-            "hasRegularIncome,  APPLICATION-PAYMENT-ABILITY-MISSING",
-            "mfcStatutoryGround, APPLICATION-STATUTORY-GROUND-MISSING"
+            "totalDebtAmount,     APPLICATION-DEBT-AMOUNT-MISSING",
+            "previousBankruptcy,  MFC-PRIOR-BANKRUPTCY-5Y",
+            "mfcStatutoryGrounds, APPLICATION-STATUTORY-GROUNDS-MISSING",
+            "bailiffsCaseClosedNoNew, MFC-GROUND-BAILIFFS-CLOSED"
     })
     void missingAnswerRequiresInformation(String questionCode, String expectedRuleCode) {
         Map<String, String> answers = baseAnswers();
@@ -111,14 +164,96 @@ class RuleEngineTest {
         assertThat(result.manualReviewRequired()).isFalse();
     }
 
+    /**
+     * Stage 3 of the eligibility flow (п. 1 ст. 223.2 127-ФЗ): the statutory-ground decision table.
+     * Eligibility is OR across selected categories and AND across the conditions inside one
+     * category; "none" selected alone routes to court, combined with real categories it is ignored;
+     * a failed unified-child-benefit confirmation drops only that category; the old-debt ground has
+     * no property condition; any "not sure" answer routes to manual review (check-your-documents).
+     * Empty cells mean the question was not asked/answered for that scenario.
+     */
+    @ParameterizedTest(name = "[{index}] grounds={0} bailiffs={1} benefit={2} writ1y={3} property={4} writ7y={5} -> {6}")
+    @CsvSource({
+            // grounds,                            bailiffs, benefit,  writ1y,   property, writ7y,   expected route
+            "enforcement_ended,                    yes,      ,         ,         ,         ,         MFC_PRELIMINARY",
+            "enforcement_ended,                    no,       ,         ,         ,         ,         COURT_PRELIMINARY",
+            "enforcement_ended,                    not_sure, ,         ,         ,         ,         MANUAL_REVIEW",
+            "pensioner,                            ,         ,         yes,      no,       ,         MFC_PRELIMINARY",
+            "pensioner,                            ,         ,         no,       no,       ,         COURT_PRELIMINARY",
+            "pensioner,                            ,         ,         yes,      yes,      ,         COURT_PRELIMINARY",
+            "pensioner,                            ,         ,         not_sure, no,       ,         MANUAL_REVIEW",
+            "pensioner,                            ,         ,         yes,      not_sure, ,         MANUAL_REVIEW",
+            "svo_participant,                      ,         ,         yes,      no,       ,         MFC_PRELIMINARY",
+            "child_benefit,                        ,         yes,      yes,      no,       ,         MFC_PRELIMINARY",
+            "child_benefit,                        ,         no,       ,         ,         ,         COURT_PRELIMINARY",
+            "child_benefit,                        ,         not_sure, ,         ,         ,         MANUAL_REVIEW",
+            "'pensioner,child_benefit',            ,         no,       yes,      no,       ,         MFC_PRELIMINARY",
+            "'pensioner,svo_participant',          ,         ,         yes,      no,       ,         MFC_PRELIMINARY",
+            "long_enforcement,                     ,         ,         ,         ,         yes,      MFC_PRELIMINARY",
+            "long_enforcement,                     ,         ,         ,         ,         no,       COURT_PRELIMINARY",
+            "long_enforcement,                     ,         ,         ,         ,         not_sure, MANUAL_REVIEW",
+            "none,                                 ,         ,         ,         ,         ,         COURT_PRELIMINARY",
+            "'none,enforcement_ended',             yes,      ,         ,         ,         ,         MFC_PRELIMINARY",
+            "'enforcement_ended,long_enforcement', no,       ,         ,         ,         yes,      MFC_PRELIMINARY",
+            "'enforcement_ended,long_enforcement', no,       ,         ,         ,         no,       COURT_PRELIMINARY"
+    })
+    void statutoryGroundDecisionTable(String grounds, String bailiffs, String benefit, String writ1y,
+                                      String property, String writ7y, BankruptcyRoute expectedRoute) {
+        Map<String, String> answers = new HashMap<>();
+        answers.put("totalDebtAmount", "100000");
+        answers.put("previousBankruptcy", "false");
+        answers.put("mfcStatutoryGrounds", grounds);
+        putIfPresent(answers, "bailiffsCaseClosedNoNew", bailiffs);
+        putIfPresent(answers, "childBenefitConfirmed", benefit);
+        putIfPresent(answers, "writUnpaidOverOneYear", writ1y);
+        putIfPresent(answers, "ownsSellableProperty", property);
+        putIfPresent(answers, "writIssuedOverSevenYears", writ7y);
+
+        EngineResult result = evaluate(answers);
+        assertThat(result.route()).isEqualTo(expectedRoute);
+        assertThat(result.missingInformation()).isEmpty();
+        assertThat(result.manualReviewRequired())
+                .isEqualTo(expectedRoute == BankruptcyRoute.MANUAL_REVIEW);
+    }
+
+    /** The old-debt ground never asks the property question (пп. 4 п. 1 ст. 223.2 has no asset condition). */
+    @Test
+    void oldDebtGroundPassesWithoutPropertyAnswer() {
+        Map<String, String> answers = new HashMap<>();
+        answers.put("totalDebtAmount", "100000");
+        answers.put("previousBankruptcy", "false");
+        answers.put("mfcStatutoryGrounds", "long_enforcement");
+        answers.put("writIssuedOverSevenYears", "yes");
+        EngineResult result = evaluate(answers);
+        assertThat(result.route()).isEqualTo(BankruptcyRoute.MFC_PRELIMINARY);
+        assertThat(result.missingInformation()).isEmpty();
+    }
+
+    /** A qualifying ground carries the legal-basis citation for the result screen. */
+    @Test
+    void passedGroundCarriesLegalBasis() {
+        EngineResult result = evaluate(baseAnswers());
+        assertThat(result.evaluations())
+                .anyMatch(e -> e.ruleCode().equals("MFC-GROUND-BAILIFFS-CLOSED")
+                        && e.outcome() == RuleOutcome.PASSED
+                        && "пп. 1 п. 1 ст. 223.2 Закона № 127-ФЗ".equals(e.legalBasis()));
+    }
+
+    @Test
+    void amountFailureCarriesLegalBasis() {
+        Map<String, String> answers = baseAnswers();
+        answers.put("totalDebtAmount", "1000001");
+        EngineResult result = evaluate(answers);
+        assertThat(result.triggered())
+                .anyMatch(e -> e.ruleCode().equals("MFC-AMOUNT-UPPER-BOUND")
+                        && "п. 1 ст. 223.2 Закона № 127-ФЗ".equals(e.legalBasis()));
+    }
+
     @ParameterizedTest(name = "{0}={1} -> {2}")
     @CsvSource({
             "ownsMortgagedHome,         true,   MANUAL-REVIEW-MORTGAGE",
-            "previousBankruptcy,        true,   MANUAL-REVIEW-PREVIOUS-BANKRUPTCY",
             "recentPropertyTransaction, sold,   MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
-            "recentPropertyTransaction, gifted, MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION",
-            "mfcStatutoryGround,        none,   MANUAL-REVIEW-NO-STATUTORY-GROUND",
-            "mfcStatutoryGround,        unknown, MANUAL-REVIEW-NO-STATUTORY-GROUND"
+            "recentPropertyTransaction, gifted, MANUAL-REVIEW-RECENT-PROPERTY-TRANSACTION"
     })
     void flaggedAnswerForcesManualReview(String questionCode, String answer, String expectedRuleCode) {
         Map<String, String> answers = baseAnswers();
@@ -128,27 +263,6 @@ class RuleEngineTest {
         assertThat(result.manualReviewRequired()).isTrue();
         assertThat(result.triggered())
                 .anyMatch(e -> e.ruleCode().equals(expectedRuleCode));
-    }
-
-    /**
-     * Each statutory ground recognised for the extrajudicial procedure keeps a clean in-bounds case
-     * on the MFC route. Expected results pending lawyer approval (placeholder grounds).
-     */
-    @ParameterizedTest(name = "ground {0} -> MFC_PRELIMINARY")
-    @CsvSource({
-            "enforcement_ended",
-            "pensioner",
-            "child_benefit",
-            "svo_participant",
-            "long_enforcement"
-    })
-    void recognisedStatutoryGroundKeepsMfcRoute(String ground) {
-        Map<String, String> answers = baseAnswers();
-        answers.put("mfcStatutoryGround", ground);
-        EngineResult result = evaluate(answers);
-        assertThat(result.route()).isEqualTo(BankruptcyRoute.MFC_PRELIMINARY);
-        assertThat(result.manualReviewRequired()).isFalse();
-        assertThat(result.missingInformation()).isEmpty();
     }
 
     @Test
@@ -166,16 +280,16 @@ class RuleEngineTest {
 
         Map<String, String> answers = baseAnswers();
         answers.remove("totalDebtAmount");
-        answers.remove("hasRegularIncome");
+        answers.remove("mfcStatutoryGrounds");
 
         EngineResult expected = engine.evaluate(new RuleContext(
-                new QuestionnaireSnapshot(UUID.randomUUID(), "v1", answers)));
+                new QuestionnaireSnapshot(UUID.randomUUID(), "v2", answers)));
         EngineResult actual = reversedEngine.evaluate(new RuleContext(
-                new QuestionnaireSnapshot(UUID.randomUUID(), "v1", answers)));
+                new QuestionnaireSnapshot(UUID.randomUUID(), "v2", answers)));
 
         assertThat(actual).isEqualTo(expected);
         assertThat(actual.missingInformation()).containsExactly(
-                "APPLICATION-DEBT-AMOUNT-MISSING", "APPLICATION-PAYMENT-ABILITY-MISSING");
+                "APPLICATION-DEBT-AMOUNT-MISSING", "APPLICATION-STATUTORY-GROUNDS-MISSING");
     }
 
     @Test
@@ -200,7 +314,7 @@ class RuleEngineTest {
         });
 
         EngineResult result = new RuleEngine(rules).evaluate(new RuleContext(
-                new QuestionnaireSnapshot(UUID.randomUUID(), "v1", baseAnswers())));
+                new QuestionnaireSnapshot(UUID.randomUUID(), "v2", baseAnswers())));
 
         assertThat(result.route()).isEqualTo(BankruptcyRoute.MANUAL_REVIEW);
         assertThat(result.manualReviewRequired()).isTrue();
@@ -215,5 +329,11 @@ class RuleEngineTest {
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> new RuleEngine(rules))
                 .withMessageContaining("MFC-AMOUNT-LOWER-BOUND");
+    }
+
+    private static void putIfPresent(Map<String, String> answers, String code, String value) {
+        if (value != null && !value.isBlank()) {
+            answers.put(code, value);
+        }
     }
 }
