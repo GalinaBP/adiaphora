@@ -114,6 +114,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Baked into the SPA bundle: the browser calls the backend directly on the
+        # host-mapped port (CORS_ALLOWED_ORIGINS already permits localhost:3000).
+        VITE_API_BASE: http://localhost:${BACKEND_PORT:-8080}/api/v1
     depends_on:
       backend:
         condition: service_healthy
