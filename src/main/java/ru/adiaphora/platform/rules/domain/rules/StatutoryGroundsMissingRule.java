@@ -7,27 +7,30 @@ import ru.adiaphora.platform.rules.domain.RuleContext;
 import ru.adiaphora.platform.rules.domain.RuleEvaluation;
 import ru.adiaphora.platform.rules.domain.RuleInputs;
 
-/** Flags missing payment-ability information (regular income). Placeholder. */
-public class PaymentAbilityMissingRule implements BankruptcyRule {
+/**
+ * Flags a missing statutory-grounds answer: the extrajudicial procedure requires at least one of the
+ * grounds recognised by п. 1 ст. 223.2 127-ФЗ, so no automatic decision is possible without it.
+ */
+public class StatutoryGroundsMissingRule implements BankruptcyRule {
 
     @Override
     public String code() {
-        return "APPLICATION-PAYMENT-ABILITY-MISSING";
+        return "APPLICATION-STATUTORY-GROUNDS-MISSING";
     }
 
     @Override
     public int order() {
-        return 20;
+        return 30;
     }
 
     @Override
     public RuleEvaluation evaluate(RuleContext context) {
-        if (!context.isAnswered(RuleInputs.HAS_REGULAR_INCOME)) {
+        if (context.multi(RuleInputs.MFC_STATUTORY_GROUNDS).isEmpty()) {
             return new RuleEvaluation(code(), RuleOutcome.NEEDS_INFORMATION, RuleSeverity.WARNING,
-                    "hasRegularIncome not provided",
-                    "Укажите, есть ли у вас регулярный доход.", true);
+                    "mfcStatutoryGrounds not provided",
+                    "Отметьте, какие из категорий для внесудебного банкротства к вам относятся.", true);
         }
         return new RuleEvaluation(code(), RuleOutcome.PASSED, RuleSeverity.INFO,
-                "hasRegularIncome present", null, false);
+                "mfcStatutoryGrounds present", null, false);
     }
 }

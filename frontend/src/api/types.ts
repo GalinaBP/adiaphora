@@ -236,6 +236,7 @@ export interface ReviewResponse {
 export type EligibilityVerdict =
   | 'MFC_ELIGIBLE'
   | 'AMOUNT_OUT_OF_RANGE'
+  | 'JUDICIAL_ROUTE'
   | 'MANUAL_REVIEW'
   | 'NEEDS_INFORMATION';
 
@@ -245,22 +246,34 @@ export type MfcStatutoryGround =
   | 'child_benefit'
   | 'svo_participant'
   | 'long_enforcement'
-  | 'none'
-  | 'unknown';
+  | 'none';
+
+export type TriStateAnswer = 'yes' | 'no' | 'not_sure';
 
 export interface EligibilityEstimateRequest {
   totalDebtAmount?: number | null;
-  hasRegularIncome?: boolean | null;
-  ownsMortgagedHome?: boolean | null;
   previousBankruptcy?: boolean | null;
-  recentPropertyTransaction?: 'none' | 'sold' | 'gifted' | null;
-  mfcStatutoryGround?: MfcStatutoryGround | null;
+  previousBankruptcyEndedOn?: string | null;
+  mfcStatutoryGrounds?: MfcStatutoryGround[] | null;
+  bailiffsCaseClosedNoNew?: TriStateAnswer | null;
+  childBenefitConfirmed?: TriStateAnswer | null;
+  writUnpaidOverOneYear?: TriStateAnswer | null;
+  ownsSellableProperty?: TriStateAnswer | null;
+  writIssuedOverSevenYears?: TriStateAnswer | null;
+}
+
+export interface QualifyingGround {
+  code: string;
+  message: string;
+  legalBasis: string | null;
 }
 
 export interface EligibilityEstimateResponse {
   verdict: EligibilityVerdict;
   route: BankruptcyRoute;
   messages: string[];
+  qualifyingGrounds: QualifyingGround[];
+  citations: string[];
   missingInformation: string[];
   rulesetVersion: string;
 }

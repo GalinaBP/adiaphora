@@ -34,11 +34,18 @@ public final class QuestionnaireTestSeed {
         insertQuestion(jdbc, versionId, "hasRegularIncome", "BOOLEAN", 2);
         insertQuestion(jdbc, versionId, "ownsMortgagedHome", "BOOLEAN", 3);
         insertQuestion(jdbc, versionId, "previousBankruptcy", "BOOLEAN", 4);
-        String choiceId = insertQuestion(jdbc, versionId, "recentPropertyTransaction", "SINGLE_CHOICE", 5);
+        insertQuestion(jdbc, versionId, "previousBankruptcyEndedOn", "DATE", 5);
+        String choiceId = insertQuestion(jdbc, versionId, "recentPropertyTransaction", "SINGLE_CHOICE", 6);
         insertOptions(jdbc, choiceId, "none", "sold", "gifted");
-        String groundId = insertQuestion(jdbc, versionId, "mfcStatutoryGround", "SINGLE_CHOICE", 6);
+        String groundId = insertQuestion(jdbc, versionId, "mfcStatutoryGrounds", "MULTIPLE_CHOICE", 7);
         insertOptions(jdbc, groundId, "enforcement_ended", "pensioner", "child_benefit",
-                "svo_participant", "long_enforcement", "none", "unknown");
+                "svo_participant", "long_enforcement", "none");
+        int order = 8;
+        for (String triState : new String[]{"bailiffsCaseClosedNoNew", "childBenefitConfirmed",
+                "writUnpaidOverOneYear", "ownsSellableProperty", "writIssuedOverSevenYears"}) {
+            String questionId = insertQuestion(jdbc, versionId, triState, "SINGLE_CHOICE", order++);
+            insertOptions(jdbc, questionId, "yes", "no", "not_sure");
+        }
     }
 
     private static void insertOptions(JdbcTemplate jdbc, String questionId, String... values) {

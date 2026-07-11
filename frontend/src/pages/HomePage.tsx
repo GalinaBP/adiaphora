@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { eligibilityApi } from '../api/endpoints';
 import type {
+  EligibilityEstimateRequest,
   EligibilityEstimateResponse,
+  EligibilityVerdict,
   MfcStatutoryGround,
+  TriStateAnswer,
 } from '../api/types';
 import './HomePage.css';
 
@@ -15,31 +18,36 @@ type VerdictCopy = {
   tone: 'positive' | 'attention' | 'neutral';
 };
 
-const VERDICT_TEXT: Record<EligibilityEstimateResponse['verdict'], VerdictCopy> = {
+const VERDICT_TEXT: Record<EligibilityVerdict, VerdictCopy> = {
   MFC_ELIGIBLE: {
-    title: 'Есть основания продолжить проверку для подачи через МФЦ',
-    body: 'По указанным ответам внесудебное банкротство может вам подойти. Следующий шаг — проверить исполнительные производства, полный список долгов и другие обязательные условия.',
+    title: 'Вам доступно внесудебное банкротство',
+    body: 'По указанным ответам условия процедуры через МФЦ выполняются. Ниже — основания, которые подтвердились, со ссылками на закон. Следующий шаг — собрать полный список кредиторов и подготовить заявление.',
     tone: 'positive',
   },
   AMOUNT_OUT_OF_RANGE: {
-    title: 'Условие по сумме долга для МФЦ не выполнено',
-    body: 'Для внесудебного банкротства общая сумма учитываемых обязательств должна быть от 25 000 до 1 000 000 ₽. Этот MVP работает только с процедурой через МФЦ.',
+    title: 'Внесудебное банкротство недоступно: сумма долга вне диапазона',
+    body: 'Для процедуры через МФЦ общая сумма учитываемых обязательств должна быть от 25 000 до 1 000 000 ₽ (п. 1 ст. 223.2 Закона № 127-ФЗ). Вам может подойти судебное банкротство — оно проходит через арбитражный суд.',
+    tone: 'attention',
+  },
+  JUDICIAL_ROUTE: {
+    title: 'Внесудебное банкротство недоступно — рассмотрите судебную процедуру',
+    body: 'По вашим ответам условия процедуры через МФЦ не выполняются. Списание долгов остаётся возможным через судебное банкротство.',
     tone: 'attention',
   },
   MANUAL_REVIEW: {
-    title: 'Нужна дополнительная проверка условий МФЦ',
-    body: 'По этим ответам нельзя уверенно подтвердить возможность подачи. Продолжите анкету, чтобы проверить исполнительные производства, имущество и обязательные сведения.',
-    tone: 'attention',
+    title: 'Проверьте документы и пройдите проверку ещё раз',
+    body: 'По ответам «не уверен(а)» вывод сделать нельзя. Ниже — что именно и где проверить. После проверки вернитесь и ответьте точно.',
+    tone: 'neutral',
   },
   NEEDS_INFORMATION: {
     title: 'Недостаточно данных для предварительной проверки',
-    body: 'Заполните известные вам поля. Итоговая возможность подачи через МФЦ всё равно подтверждается по официальным сведениям и документам.',
+    body: 'Ответьте на вопросы всех шагов. Итоговая возможность подачи через МФЦ всё равно подтверждается по официальным сведениям и документам.',
     tone: 'neutral',
   },
 };
 
-// Statutory categories for the extrajudicial (MFC) procedure, worded after the lawyer-provided
-// «Часть 1. К какой категории вы относитесь?» source document. Placeholder pending legal review.
+// Statutory categories for the extrajudicial (MFC) procedure (п. 1 ст. 223.2 Закона № 127-ФЗ).
+// Multi-select: the qualifying conditions themselves are asked per category on the next step.
 const CATEGORY_OPTIONS: Array<{
   value: MfcStatutoryGround;
   title: string;
@@ -47,55 +55,57 @@ const CATEGORY_OPTIONS: Array<{
 }> = [
   {
     value: 'enforcement_ended',
-    title: 'Обычный должник',
-    description:
-      'Пристав окончил исполнительное производство, потому что у вас не нашли имущество или деньги '
-      + '(п. 4 ч. 1 ст. 46 Закона об исполнительном производстве), и после этого новых производств '
-      + 'о взыскании денег не возбуждалось.',
+    title: 'Приставы уже работали с моим долгом и закрыли дело',
+    description: 'Исполнительное производство оканчивалось из-за отсутствия имущества или денег.',
   },
   {
     value: 'pensioner',
     title: 'Пенсионер',
-    description:
-      'Пенсия — ваш основной доход; исполнительный документ предъявлен к исполнению не менее года '
-      + 'назад, долг полностью не погашен, имущества для продажи нет.',
+    description: 'Пенсия — ваш единственный или основной доход.',
   },
   {
     value: 'child_benefit',
-    title: 'Получатель ежемесячного пособия на ребёнка',
+    title: 'Получаю единое пособие на ребёнка',
     description:
-      'Вы получаете ежемесячное пособие в связи с рождением и воспитанием ребёнка; исполнительный '
-      + 'документ предъявлен не менее года назад, долг не погашен, имущества нет.',
+      'Именно единое пособие, назначаемое Социальным фондом по заявлению — не декретные '
+      + 'и не пособия от работодателя.',
   },
   {
     value: 'svo_participant',
-    title: 'Участник специальной военной операции',
-    description:
-      'У вас есть документ, подтверждающий участие в СВО; исполнительный документ предъявлен '
-      + 'не менее года назад, долг не погашен, имущества нет.',
+    title: 'Участвую или участвовал(а) в СВО',
+    description: 'Есть документ, подтверждающий участие в специальной военной операции.',
   },
   {
     value: 'long_enforcement',
-    title: 'Долг взыскивают уже не менее семи лет',
-    description:
-      'Исполнительный документ выдан не менее семи лет назад, предъявлялся к взысканию '
-      + '(приставам, в банк или работодателю), и долг до сих пор полностью не погашен.',
+    title: 'Долг взыскивают уже 7 лет или дольше',
+    description: 'Исполнительный документ выдан не менее семи лет назад.',
   },
   {
     value: 'none',
-    title: 'Ни одна категория не подходит',
-    description:
-      'У вас не было исполнительных производств, производство началось менее года назад '
-      + 'или перечисленные ситуации не о вас.',
-  },
-  {
-    value: 'unknown',
-    title: 'Не знаю, нужно проверить документы',
-    description:
-      'Нужно посмотреть постановления судебного пристава, исполнительные документы и даты — '
-      + 'мы подскажем, что проверить.',
+    title: 'Ни одна ситуация не подходит',
+    description: 'Перечисленные категории не о вас.',
   },
 ];
+
+const MFC_LOWER_BOUND = 25000;
+const MFC_UPPER_BOUND = 1000000;
+
+/** True when the previous procedure ended less than 5 years ago (п. 8 ст. 223.2 127-ФЗ). */
+function insideFiveYearBar(endedOn: string): boolean {
+  const ended = new Date(endedOn);
+  if (Number.isNaN(ended.getTime())) {
+    return false;
+  }
+  const barEnd = new Date(ended);
+  barEnd.setFullYear(barEnd.getFullYear() + 5);
+  return barEnd > new Date();
+}
+
+const TRI_STATE_LABELS: Record<TriStateAnswer, string> = {
+  yes: 'Да',
+  no: 'Нет',
+  not_sure: 'Не уверен(а)',
+};
 
 function Icon({ children, size = 24 }: { children: ReactNode; size?: number }) {
   return (
@@ -128,19 +138,60 @@ function ArrowIcon() {
   );
 }
 
+type TriState = '' | TriStateAnswer;
+
+function TriStateField({ legend, name, value, onChange, help }: {
+  legend: string;
+  name: string;
+  value: TriState;
+  onChange: (value: TriStateAnswer) => void;
+  help?: ReactNode;
+}) {
+  return (
+    <fieldset className="home-tristate home-field-wide">
+      <legend>{legend}</legend>
+      <div className="home-tristate-options">
+        {(['yes', 'no', 'not_sure'] as const).map((option) => (
+          <label
+            className={`home-tristate-option${value === option ? ' selected' : ''}`}
+            key={option}
+          >
+            <input
+              checked={value === option}
+              name={name}
+              onChange={() => onChange(option)}
+              type="radio"
+              value={option}
+            />
+            <span>{TRI_STATE_LABELS[option]}</span>
+          </label>
+        ))}
+      </div>
+      {help}
+    </fieldset>
+  );
+}
+
 export default function HomePage() {
-  const [step, setStep] = useState<1 | 2>(1);
+  // The flow is staged with hard gates: 1 debt amount, 2 prior bankruptcy (5-year bar),
+  // 3 category multi-select, 4 category follow-up blocks. Failing stage 1–2 or picking
+  // "none" alone submits what has been answered and shows the judicial-route result.
+  const [stage, setStage] = useState<1 | 2 | 3 | 4>(1);
   const [debt, setDebt] = useState('');
-  const [income, setIncome] = useState('');
-  const [mortgage, setMortgage] = useState('');
-  const [priorBankruptcy, setPriorBankruptcy] = useState('');
-  const [propertyTx, setPropertyTx] = useState('');
-  const [statutoryGround, setStatutoryGround] = useState('');
+  const [priorBankruptcy, setPriorBankruptcy] = useState<'' | 'yes' | 'no'>('');
+  const [priorEndedOn, setPriorEndedOn] = useState('');
+  const [grounds, setGrounds] = useState<MfcStatutoryGround[]>([]);
+  const [bailiffsClosed, setBailiffsClosed] = useState<TriState>('');
+  const [benefitConfirmed, setBenefitConfirmed] = useState<TriState>('');
+  const [writOverYear, setWritOverYear] = useState<TriState>('');
+  const [sellableProperty, setSellableProperty] = useState<TriState>('');
+  const [writOverSevenYears, setWritOverSevenYears] = useState<TriState>('');
+  const [stageError, setStageError] = useState<string | null>(null);
   const [result, setResult] = useState<EligibilityEstimateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Switching steps changes the card height drastically; keep the form in view.
+  // Switching stages changes the card height drastically; keep the form in view.
   const formRef = useRef<HTMLFormElement>(null);
   const initialRender = useRef(true);
   useEffect(() => {
@@ -149,28 +200,47 @@ export default function HomePage() {
       return;
     }
     formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-  }, [step]);
+  }, [stage, result]);
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const hasGround = (value: MfcStatutoryGround) => grounds.includes(value);
+  // Block B is shared by the pensioner/child-benefit/SVO categories and shown once. When the
+  // unified benefit is not confirmed, the shared questions stay relevant only if another
+  // category from the block is selected.
+  const showsSharedBlock = hasGround('pensioner') || hasGround('svo_participant')
+    || (hasGround('child_benefit') && benefitConfirmed === 'yes');
+
+  const toggleGround = (value: MfcStatutoryGround) => {
+    setStageError(null);
+    setGrounds((current) => {
+      if (current.includes(value)) {
+        return current.filter((g) => g !== value);
+      }
+      // "none" is exclusive: picking it clears the real categories and vice versa.
+      return value === 'none' ? ['none'] : [...current.filter((g) => g !== 'none'), value];
+    });
+  };
+
+  const buildRequest = (): EligibilityEstimateRequest => ({
+    totalDebtAmount: debt === '' ? null : Number(debt),
+    previousBankruptcy: priorBankruptcy === '' ? null : priorBankruptcy === 'yes',
+    previousBankruptcyEndedOn:
+      priorBankruptcy === 'yes' && priorEndedOn !== '' ? priorEndedOn : null,
+    mfcStatutoryGrounds: grounds.length > 0 ? grounds : null,
+    bailiffsCaseClosedNoNew:
+      hasGround('enforcement_ended') && bailiffsClosed !== '' ? bailiffsClosed : null,
+    childBenefitConfirmed:
+      hasGround('child_benefit') && benefitConfirmed !== '' ? benefitConfirmed : null,
+    writUnpaidOverOneYear: showsSharedBlock && writOverYear !== '' ? writOverYear : null,
+    ownsSellableProperty: showsSharedBlock && sellableProperty !== '' ? sellableProperty : null,
+    writIssuedOverSevenYears:
+      hasGround('long_enforcement') && writOverSevenYears !== '' ? writOverSevenYears : null,
+  });
+
+  const submitEstimate = async () => {
     setBusy(true);
     setError(null);
-
     try {
-      const estimate = await eligibilityApi.estimate({
-        totalDebtAmount: debt === '' ? null : Number(debt),
-        hasRegularIncome: income === '' ? null : income === 'yes',
-        ownsMortgagedHome: mortgage === '' ? null : mortgage === 'yes',
-        previousBankruptcy:
-          priorBankruptcy === '' ? null : priorBankruptcy === 'yes',
-        recentPropertyTransaction:
-          propertyTx === ''
-            ? null
-            : (propertyTx as 'none' | 'sold' | 'gifted'),
-        mfcStatutoryGround:
-          statutoryGround === '' ? null : (statutoryGround as MfcStatutoryGround),
-      });
-      setResult(estimate);
+      setResult(await eligibilityApi.estimate(buildRequest()));
     } catch (caught) {
       setResult(null);
       setError(
@@ -181,6 +251,92 @@ export default function HomePage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // Stage 1 hard gate: an out-of-range amount ends the flow (the estimate is still submitted so
+  // the decision and its legal basis come from the backend).
+  const continueFromDebt = () => {
+    if (debt === '') {
+      setStageError('Укажите общую сумму долгов.');
+      return;
+    }
+    setStageError(null);
+    const amount = Number(debt);
+    if (amount < MFC_LOWER_BOUND || amount > MFC_UPPER_BOUND) {
+      void submitEstimate();
+      return;
+    }
+    setStage(2);
+  };
+
+  // Stage 2 hard gate: a bankruptcy that ended less than 5 years ago ends the flow.
+  const continueFromPriorBankruptcy = () => {
+    if (priorBankruptcy === '') {
+      setStageError('Ответьте, признавались ли вы банкротом ранее.');
+      return;
+    }
+    if (priorBankruptcy === 'yes' && priorEndedOn === '') {
+      setStageError('Укажите, когда завершилась предыдущая процедура.');
+      return;
+    }
+    setStageError(null);
+    if (priorBankruptcy === 'yes' && insideFiveYearBar(priorEndedOn)) {
+      void submitEstimate();
+      return;
+    }
+    setStage(3);
+  };
+
+  // Stage 3 gate: "none" alone ends the flow; otherwise the follow-up blocks open.
+  const continueFromGrounds = () => {
+    if (grounds.length === 0) {
+      setStageError('Отметьте хотя бы один вариант.');
+      return;
+    }
+    setStageError(null);
+    if (grounds.length === 1 && grounds[0] === 'none') {
+      void submitEstimate();
+      return;
+    }
+    setStage(4);
+  };
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (hasGround('enforcement_ended') && bailiffsClosed === '') {
+      setStageError('Ответьте на вопрос о закрытом производстве приставов.');
+      return;
+    }
+    if (hasGround('child_benefit') && benefitConfirmed === '') {
+      setStageError('Ответьте на вопрос о едином пособии.');
+      return;
+    }
+    if (showsSharedBlock && (writOverYear === '' || sellableProperty === '')) {
+      setStageError('Ответьте на оба вопроса об исполнительном документе и имуществе.');
+      return;
+    }
+    if (hasGround('long_enforcement') && writOverSevenYears === '') {
+      setStageError('Ответьте на вопрос о давности исполнительного документа.');
+      return;
+    }
+    setStageError(null);
+    void submitEstimate();
+  };
+
+  const resetFlow = () => {
+    setStage(1);
+    setDebt('');
+    setPriorBankruptcy('');
+    setPriorEndedOn('');
+    setGrounds([]);
+    setBailiffsClosed('');
+    setBenefitConfirmed('');
+    setWritOverYear('');
+    setSellableProperty('');
+    setWritOverSevenYears('');
+    setStageError(null);
+    setResult(null);
+    setError(null);
   };
 
   const verdictText = result ? VERDICT_TEXT[result.verdict] : null;
@@ -296,20 +452,27 @@ export default function HomePage() {
 
             <div className="home-check-grid">
               <form className="home-check-card" onSubmit={submit} ref={formRef}>
+                {!result && (
                 <div className="home-form-intro">
-                  <span className="home-form-number">{step === 1 ? '01' : '02'}</span>
+                  <span className="home-form-number">{`0${stage}`}</span>
                   <div>
-                    <h3>{step === 1 ? 'Сумма долга и ваша категория' : 'Несколько уточняющих вопросов'}</h3>
+                    <h3>
+                      {stage === 1 && 'Сумма долга'}
+                      {stage === 2 && 'Предыдущее банкротство'}
+                      {stage === 3 && 'Ваша ситуация'}
+                      {stage === 4 && 'Уточняющие вопросы'}
+                    </h3>
                     <p>
-                      {step === 1
-                        ? 'Это два главных условия внесудебного банкротства. Шаг 1 из 2.'
-                        : 'Они помогают заметить обстоятельства, требующие проверки. Шаг 2 из 2.'}
-                      {' '}Можно пропустить поле, если пока не знаете точный ответ.
+                      {stage === 1 && 'Шаг 1 из 4. Первое условие закона: от 25 000 до 1 000 000 ₽.'}
+                      {stage === 2 && 'Шаг 2 из 4. Повторная внесудебная процедура возможна не раньше чем через 5 лет.'}
+                      {stage === 3 && 'Шаг 3 из 4. Достаточно подойти хотя бы под одну категорию — можно выбрать несколько.'}
+                      {stage === 4 && 'Шаг 4 из 4. Вопросы только по выбранным категориям.'}
                     </p>
                   </div>
                 </div>
+                )}
 
-                {step === 1 && (
+                {!result && stage === 1 && (
                 <div className="home-fields-grid">
                   <label className="home-field home-field-wide">
                     <span>Общая сумма долгов (₽)</span>
@@ -346,30 +509,82 @@ export default function HomePage() {
                         </details>
                       </li>
                       <li>налоги и сборы — задолженность можно проверить на сайте ФНС или на Госуслугах;</li>
-                      <li>штрафы — автоштрафы отображаются на Госуслугах и сайте ГИБДД;</li>
+                      <li>обязательства со сроком, который ещё не наступил;</li>
                       <li>платежи по договорам поручительства, включая суммы, по которым нет просрочки платежей;</li>
                       <li>судебная задолженность — её можно проверить в личном кабинете на Госуслугах или на сайте ФССП;</li>
                       <li>алименты — их запросят для учёта в общей сумме долга при подаче заявления; списать долги по алиментам нельзя.</li>
                     </ul>
-                  </details>
-
-                  <fieldset className="home-category-fieldset home-field-wide">
-                    <legend>К какой категории вы относитесь?</legend>
-                    <p className="home-category-hint">
-                      Для внесудебного банкротства нужно подходить хотя бы под одну категорию.
-                      Если подходят несколько — выберите любую из них.
+                    <p>
+                      Не включаются: неустойки, штрафы, пени и другие финансовые санкции,
+                      начисленные до подачи заявления. Сумма фиксируется на дату подачи в МФЦ.
                     </p>
+                  </details>
+                </div>
+                )}
+
+                {!result && stage === 2 && (
+                <div className="home-fields-grid">
+                  <fieldset className="home-tristate home-field-wide">
+                    <legend>Признавались ли вы банкротом ранее (через МФЦ или через суд)?</legend>
+                    <div className="home-tristate-options">
+                      {(['yes', 'no'] as const).map((option) => (
+                        <label
+                          className={`home-tristate-option${priorBankruptcy === option ? ' selected' : ''}`}
+                          key={option}
+                        >
+                          <input
+                            checked={priorBankruptcy === option}
+                            name="priorBankruptcy"
+                            onChange={() => {
+                              setPriorBankruptcy(option);
+                              setStageError(null);
+                            }}
+                            type="radio"
+                            value={option}
+                          />
+                          <span>{option === 'yes' ? 'Да' : 'Нет'}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  {priorBankruptcy === 'yes' && (
+                    <label className="home-field home-field-wide">
+                      <span>Когда та процедура завершилась или была прекращена?</span>
+                      <input
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          setPriorEndedOn(event.target.value);
+                          setStageError(null);
+                        }}
+                        type="date"
+                        value={priorEndedOn}
+                      />
+                      <small>
+                        Считается любая завершённая или прекращённая процедура — в том числе после
+                        мирового соглашения, реструктуризации долгов или реализации имущества
+                        (п. 8 ст. 223.2 Закона № 127-ФЗ).
+                      </small>
+                    </label>
+                  )}
+                </div>
+                )}
+
+                {!result && stage === 3 && (
+                <div className="home-fields-grid">
+                  <fieldset className="home-category-fieldset home-field-wide">
+                    <legend>Какие из этих ситуаций к вам относятся?</legend>
+                    <p className="home-category-hint">Можно выбрать несколько вариантов.</p>
                     <div className="home-category-list">
                       {CATEGORY_OPTIONS.map((option) => (
                         <label
-                          className={`home-category-option${statutoryGround === option.value ? ' selected' : ''}`}
+                          className={`home-category-option${hasGround(option.value) ? ' selected' : ''}`}
                           key={option.value}
                         >
                           <input
-                            checked={statutoryGround === option.value}
-                            name="statutoryGround"
-                            onChange={(event: ChangeEvent<HTMLInputElement>) => setStatutoryGround(event.target.value)}
-                            type="radio"
+                            checked={hasGround(option.value)}
+                            name="statutoryGrounds"
+                            onChange={() => toggleGround(option.value)}
+                            type="checkbox"
                             value={option.value}
                           />
                           <span>
@@ -383,74 +598,161 @@ export default function HomePage() {
                 </div>
                 )}
 
-                {step === 2 && (
+                {!result && stage === 4 && (
                 <div className="home-fields-grid">
-                  <label className="home-field">
-                    <span>Есть ли у вас регулярный доход?</span>
-                    <select value={income} onChange={(event: ChangeEvent<HTMLSelectElement>) => setIncome(event.target.value)}>
-                      <option value="">— выберите —</option>
-                      <option value="yes">Да</option>
-                      <option value="no">Нет</option>
-                    </select>
-                  </label>
+                  {hasGround('enforcement_ended') && (
+                    <TriStateField
+                      legend="Приставы уже пытались взыскать этот долг и закрыли дело, потому что не нашли ни вас, ни имущество, ни деньги на счетах? И новых дел о взыскании с тех пор не открывали?"
+                      name="bailiffsClosed"
+                      onChange={(value) => {
+                        setBailiffsClosed(value);
+                        setStageError(null);
+                      }}
+                      value={bailiffsClosed}
+                      help={(
+                        <details className="home-question-help">
+                          <summary>Как это проверить</summary>
+                          <p>
+                            Зайдите на <strong>fssp.gov.ru</strong> → «Банк данных исполнительных
+                            производств» → введите ФИО и дату рождения. Если дело было и его закрыли,
+                            оно отобразится со статусом «окончено» и причиной окончания.
+                          </p>
+                        </details>
+                      )}
+                    />
+                  )}
 
-                  <label className="home-field">
-                    <span>Есть ли у вас жильё в ипотеке?</span>
-                    <select value={mortgage} onChange={(event: ChangeEvent<HTMLSelectElement>) => setMortgage(event.target.value)}>
-                      <option value="">— выберите —</option>
-                      <option value="yes">Да</option>
-                      <option value="no">Нет</option>
-                    </select>
-                  </label>
+                  {hasGround('child_benefit') && (
+                    <TriStateField
+                      legend="Вам назначено именно единое пособие (через Социальный фонд, СФР)?"
+                      name="benefitConfirmed"
+                      onChange={(value) => {
+                        setBenefitConfirmed(value);
+                        setStageError(null);
+                      }}
+                      value={benefitConfirmed}
+                      help={(
+                        <details className="home-question-help">
+                          <summary>Как это проверить</summary>
+                          <p>
+                            Посмотрите в личном кабинете на <strong>Госуслугах</strong> (раздел
+                            «Выплаты» → «Единое пособие») или в кабинете СФР на <strong>sfr.gov.ru</strong>.
+                          </p>
+                        </details>
+                      )}
+                    />
+                  )}
 
-                  <label className="home-field">
-                    <span>Признавались ли вы банкротом ранее?</span>
-                    <select value={priorBankruptcy} onChange={(event: ChangeEvent<HTMLSelectElement>) => setPriorBankruptcy(event.target.value)}>
-                      <option value="">— выберите —</option>
-                      <option value="yes">Да</option>
-                      <option value="no">Нет</option>
-                    </select>
-                  </label>
+                  {showsSharedBlock && (
+                    <>
+                      <TriStateField
+                        legend="Есть документ о долге (решение или приказ суда), по которому взыскание — приставами, банком или из зарплаты — началось год назад или раньше? И долг до сих пор не погашен полностью?"
+                        name="writOverYear"
+                        onChange={(value) => {
+                          setWritOverYear(value);
+                          setStageError(null);
+                        }}
+                        value={writOverYear}
+                        help={(
+                          <details className="home-question-help">
+                            <summary>Что это за документ и где искать дату</summary>
+                            <p>
+                              Обычно это <strong>исполнительный лист</strong> или{' '}
+                              <strong>судебный приказ</strong>: суд решил, что вы должны, и документ
+                              передали приставам, в банк или работодателю — и с вас начали удерживать
+                              деньги.
+                            </p>
+                            <p>
+                              Дату смотрите на <strong>fssp.gov.ru</strong> (когда пристав возбудил
+                              производство). Если там пусто — проверьте, не списывал ли деньги банк
+                              (выписка по счёту) и не удерживала ли бухгалтерия на работе.
+                            </p>
+                          </details>
+                        )}
+                      />
+                      <TriStateField
+                        legend="Есть ли имущество, которое можно продать в счёт долга (недвижимость кроме единственного жилья, автомобиль, вклад и т. п.)?"
+                        name="sellableProperty"
+                        onChange={(value) => {
+                          setSellableProperty(value);
+                          setStageError(null);
+                        }}
+                        value={sellableProperty}
+                      />
+                    </>
+                  )}
 
-                  <label className="home-field">
-                    <span>Продавали или дарили имущество за последние 3 года?</span>
-                    <select value={propertyTx} onChange={(event: ChangeEvent<HTMLSelectElement>) => setPropertyTx(event.target.value)}>
-                      <option value="">— выберите —</option>
-                      <option value="none">Нет</option>
-                      <option value="sold">Да — продавал(а)</option>
-                      <option value="gifted">Да — дарил(а)</option>
-                    </select>
-                  </label>
+                  {hasGround('long_enforcement') && (
+                    <TriStateField
+                      legend="Документ о долге (решение или приказ суда) выдан 7 лет назад или раньше и уже передавался на взыскание — приставам, в банк или работодателю? Долг не погашен полностью?"
+                      name="writOverSevenYears"
+                      onChange={(value) => {
+                        setWritOverSevenYears(value);
+                        setStageError(null);
+                      }}
+                      value={writOverSevenYears}
+                      help={(
+                        <details className="home-question-help">
+                          <summary>Где посмотреть дату</summary>
+                          <p>
+                            Смотрите дату в постановлении пристава о возбуждении производства
+                            (не дату самого решения суда) или в выписке из банка, если деньги
+                            списывали напрямую.
+                          </p>
+                        </details>
+                      )}
+                    />
+                  )}
                 </div>
                 )}
 
+                {!result && stageError && (
+                  <div className="home-alert home-alert-error" role="alert">{stageError}</div>
+                )}
+
+                {!result && (
                 <div className="home-form-footer">
-                  {step === 1 ? (
-                    <button className="home-button" onClick={() => setStep(2)} type="button">
-                      Продолжить <ArrowIcon />
+                  {stage > 1 && (
+                    <button
+                      className="home-button home-button-secondary"
+                      onClick={() => {
+                        setStage((current) => (current > 1 ? (current - 1) as 1 | 2 | 3 : current));
+                        setStageError(null);
+                      }}
+                      type="button"
+                    >
+                      Назад
                     </button>
-                  ) : (
-                    <>
-                      <button
-                        className="home-button home-button-secondary"
-                        onClick={() => setStep(1)}
-                        type="button"
-                      >
-                        Назад
-                      </button>
-                      <button className="home-button" disabled={busy} type="submit">
-                        {busy ? 'Проверяем…' : 'Проверить условия МФЦ'}
-                        {!busy && <ArrowIcon />}
-                      </button>
-                    </>
+                  )}
+                  {stage === 1 && (
+                    <button className="home-button" disabled={busy} onClick={continueFromDebt} type="button">
+                      {busy ? 'Проверяем…' : 'Продолжить'} {!busy && <ArrowIcon />}
+                    </button>
+                  )}
+                  {stage === 2 && (
+                    <button className="home-button" disabled={busy} onClick={continueFromPriorBankruptcy} type="button">
+                      {busy ? 'Проверяем…' : 'Продолжить'} {!busy && <ArrowIcon />}
+                    </button>
+                  )}
+                  {stage === 3 && (
+                    <button className="home-button" disabled={busy} onClick={continueFromGrounds} type="button">
+                      {busy ? 'Проверяем…' : 'Продолжить'} {!busy && <ArrowIcon />}
+                    </button>
+                  )}
+                  {stage === 4 && (
+                    <button className="home-button" disabled={busy} type="submit">
+                      {busy ? 'Проверяем…' : 'Проверить условия МФЦ'}
+                      {!busy && <ArrowIcon />}
+                    </button>
                   )}
                   <p>
                     <Icon size={18}>
                       <path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v10H6V10Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
                     </Icon>
-                    Данные быстрой формы не сохраняются
+                    Ответы сохраняются обезличенно — без имени и контактов
                   </p>
                 </div>
+                )}
 
                 {error && <div className="home-alert home-alert-error" role="alert">{error}</div>}
 
@@ -473,10 +775,29 @@ export default function HomePage() {
                       <h3>{verdictText.title}</h3>
                       <p>{verdictText.body}</p>
 
+                      {result.qualifyingGrounds.length > 0 && (
+                        <ul className="home-result-grounds">
+                          {result.qualifyingGrounds.map((ground) => (
+                            <li key={ground.code}>
+                              {ground.message}
+                              {ground.legalBasis && (
+                                <small className="home-result-basis">{ground.legalBasis}</small>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
                       {result.messages.length > 0 && (
                         <ul>
                           {result.messages.map((message) => <li key={message}>{message}</li>)}
                         </ul>
+                      )}
+
+                      {result.citations.length > 0 && (
+                        <p className="home-result-citations">
+                          Правовое основание: {result.citations.join('; ')}.
+                        </p>
                       )}
 
                       <p className="home-result-disclaimer">
@@ -484,9 +805,18 @@ export default function HomePage() {
                         на процедуру. Он не проверяет все основания и официальные
                         реестры (набор правил {result.rulesetVersion}).
                       </p>
-                      <Link className="home-result-link" to="/register">
-                        Продолжить проверку условий МФЦ <ArrowIcon />
-                      </Link>
+                      {result.verdict === 'MFC_ELIGIBLE' && (
+                        <Link className="home-result-link" to="/register">
+                          Продолжить подготовку заявления <ArrowIcon />
+                        </Link>
+                      )}
+                      <button
+                        className="home-button home-button-secondary home-result-reset"
+                        onClick={resetFlow}
+                        type="button"
+                      >
+                        Пройти проверку заново
+                      </button>
                     </div>
                   </section>
                 )}

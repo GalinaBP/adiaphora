@@ -344,13 +344,15 @@ paths:
   /api/v1/eligibility/estimate:
     post:
       tags: [Eligibility]
-      summary: Anonymous, non-binding MFC-eligibility estimate
+      summary: Anonymous, non-binding MFC-eligibility check (staged flow, ст. 223.2 127-ФЗ)
       description: >-
-        Public endpoint (no authentication). Runs the submitted answers through the same rule
-        engine as the authenticated evaluation but persists nothing — no application, evaluation
-        or audit record is created. All fields are optional; unanswered questions produce a
-        NEEDS_INFORMATION verdict. Estimates are preliminary and pending lawyer review of the
-        placeholder ruleset.
+        Public endpoint (no authentication). Implements the staged eligibility flow — debt amount
+        gate (25 000–1 000 000 ₽), the 5-year repeat-filing bar, multi-select statutory grounds
+        and their follow-up blocks — through the same rule engine as the authenticated evaluation.
+        Each check session is persisted without personal identifiers (answers, verdict, qualifying
+        grounds, legal citations) for audit; no application, evaluation or audit-event record is
+        created. All fields are optional; unanswered questions produce a NEEDS_INFORMATION verdict.
+        Wording is pending lawyer review.
       security: []
       requestBody:
         required: true
@@ -1093,33 +1095,75 @@ components:
         totalDebtAmount:
           type: number
           minimum: 0
-          description: Total debt in RUB, up to 2 decimals.
-        hasRegularIncome: { type: boolean }
-        ownsMortgagedHome: { type: boolean }
-        previousBankruptcy: { type: boolean }
-        recentPropertyTransaction:
+          description: Total debt in RUB, up to 2 decimals (stage 1 hard gate, 25 000–1 000 000 ₽).
+        previousBankruptcy:
+          type: boolean
+          description: Stage 2 hard gate (5-year repeat-filing bar, п. 8 ст. 223.2 127-ФЗ).
+        previousBankruptcyEndedOn:
           type: string
-          enum: [none, sold, gifted]
-        mfcStatutoryGround:
+          format: date
+          description: When the previous bankruptcy procedure was completed or terminated.
+        mfcStatutoryGrounds:
+          type: array
+          description: >-
+            Statutory categories for the extrajudicial (MFC) procedure (п. 1 ст. 223.2 127-ФЗ),
+            multi-select; eligibility is OR across categories. "none" alone routes to the judicial
+            procedure and is ignored when combined with real categories.
+          items:
+            type: string
+            enum: [enforcement_ended, pensioner, child_benefit, svo_participant, long_enforcement, none]
+        bailiffsCaseClosedNoNew:
           type: string
-          description: Statutory category for the extrajudicial (MFC) procedure (127-ФЗ, ст. 223.2).
-          enum: [enforcement_ended, pensioner, child_benefit, svo_participant, long_enforcement, none, unknown]
+          description: Block A follow-up (enforcement_ended ground).
+          enum: [yes, no, not_sure]
+        childBenefitConfirmed:
+          type: string
+          description: Extra qualifying question for the child_benefit ground (unified benefit via SFR).
+          enum: [yes, no, not_sure]
+        writUnpaidOverOneYear:
+          type: string
+          description: Shared block B question (pensioner / child_benefit / svo_participant grounds).
+          enum: [yes, no, not_sure]
+        ownsSellableProperty:
+          type: string
+          description: Shared block B question; the old-debt ground deliberately has no property check.
+          enum: [yes, no, not_sure]
+        writIssuedOverSevenYears:
+          type: string
+          description: Block C follow-up (long_enforcement ground).
+          enum: [yes, no, not_sure]
+
+    EligibilityQualifyingGround:
+      type: object
+      properties:
+        code: { type: string, description: 'Ground rule code, e.g. MFC-GROUND-BAILIFFS-CLOSED.' }
+        message: { type: string }
+        legalBasis: { type: string, nullable: true }
+      required: [code, message]
 
     EligibilityEstimateResponse:
       type: object
       properties:
         verdict:
           type: string
-          enum: [MFC_ELIGIBLE, AMOUNT_OUT_OF_RANGE, MANUAL_REVIEW, NEEDS_INFORMATION]
+          enum: [MFC_ELIGIBLE, AMOUNT_OUT_OF_RANGE, JUDICIAL_ROUTE, MANUAL_REVIEW, NEEDS_INFORMATION]
         route: { $ref: '#/components/schemas/BankruptcyRoute' }
         messages:
           type: array
+          items: { type: string }
+        qualifyingGrounds:
+          type: array
+          description: Statutory grounds whose follow-up checks passed, with legal citations.
+          items: { $ref: '#/components/schemas/EligibilityQualifyingGround' }
+        citations:
+          type: array
+          description: Distinct legal-basis citations (127-ФЗ) behind the decision.
           items: { type: string }
         missingInformation:
           type: array
           items: { type: string }
         rulesetVersion: { type: string }
-      required: [verdict, route, messages, missingInformation, rulesetVersion]
+      required: [verdict, route, messages, qualifyingGrounds, citations, missingInformation, rulesetVersion]
 
     RulesEvaluationResult:
       type: object

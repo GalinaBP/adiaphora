@@ -44,6 +44,9 @@ class RuleEvaluationFindingEntity {
     @Column(name = "blocks_automatic_decision", nullable = false)
     private boolean blocksAutomaticDecision;
 
+    @Column(name = "legal_basis", length = 150)
+    private String legalBasis;
+
     protected RuleEvaluationFindingEntity() {
     }
 
@@ -57,11 +60,12 @@ class RuleEvaluationFindingEntity {
         entity.internalReason = evaluation.internalReason();
         entity.userMessage = evaluation.userMessage();
         entity.blocksAutomaticDecision = evaluation.blocksAutomaticDecision();
+        entity.legalBasis = evaluation.legalBasis();
         return entity;
     }
 
     RuleEvaluation toDomain() {
         return new RuleEvaluation(ruleCode, outcome, severity, internalReason, userMessage,
-                blocksAutomaticDecision);
+                blocksAutomaticDecision, legalBasis);
     }
 }
